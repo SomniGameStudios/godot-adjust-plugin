@@ -30,7 +30,6 @@ This file is the authoritative source of truth for ALL AI agents (Gemini, Claude
 - **Gemini:** Respect `.geminiignore` patterns.
 
 ## 📋 Pending Tasks
-- Implement AdMob ILR tracking hook.
 - Verify ATT passthrough behavior on physical iOS devices.
 
 ## 🔗 Key Files
