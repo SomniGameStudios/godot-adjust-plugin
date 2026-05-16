@@ -1,0 +1,12 @@
+# Godot Adjust Plugin .geminiignore
+.git/
+.godot/
+bin/
+platforms/android/.gradle/
+platforms/android/build/
+platforms/ios/.build/
+platforms/ios/build/
+platforms/godot_editor/.godot/
+*.aar
+*.a
+*.xcframework
