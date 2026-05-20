@@ -42,3 +42,6 @@ platforms/godot_editor/ios/plugins/
 .idea/
 *.iml
 .vscode/
+
+# Local credentials
+*credentials.json

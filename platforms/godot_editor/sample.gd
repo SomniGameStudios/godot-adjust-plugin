@@ -23,9 +23,9 @@
 extends Control
 
 # --- CONFIGURATION ---
-const APP_TOKEN := "your_app_token" # Replace with your Adjust App Token
-const EVENT_TOKEN := "your_event_token" # Replace with your Event Token
-const IS_SANDBOX := true
+var app_token := "your_app_token"
+var event_token := "your_event_token"
+var is_sandbox := true
 
 @onready var status_label := $VBoxContainer/StatusLabel
 @onready var log_label := $VBoxContainer/ScrollContainer/LogLabel
@@ -33,6 +33,7 @@ const IS_SANDBOX := true
 var _adjust: AdjustPlugin
 
 func _ready() -> void:
+	_load_credentials()
 	var platform := OS.get_name()
 	var found := Engine.has_singleton("AdjustGodotPlugin")
 	_log("Sample Ready. Platform: %s. Plugin found: %s" % [platform, str(found)])
@@ -43,6 +44,25 @@ func _ready() -> void:
 	_adjust.initialization_completed.connect(_on_adjust_init_completed)
 	_adjust.attribution_changed.connect(_on_adjust_attribution_changed)
 
+func _load_credentials() -> void:
+	var path := "res://test_credentials.json"
+	if not FileAccess.file_exists(path):
+		return
+	
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return
+	
+	var content := file.get_as_text()
+	var json_data := JSON.parse_string(content) as Dictionary
+	if json_data:
+		if json_data.has("app_token"):
+			app_token = json_data["app_token"]
+		if json_data.has("event_token"):
+			event_token = json_data["event_token"]
+		if json_data.has("is_sandbox"):
+			is_sandbox = json_data["is_sandbox"]
+
 func _log(message: String) -> void:
 	print("[AdjustSample] ", message)
 	if log_label:
@@ -50,15 +70,15 @@ func _log(message: String) -> void:
 
 func _on_initialize_pressed() -> void:
 	_log("Initializing Adjust...")
-	_adjust.initialize(APP_TOKEN, IS_SANDBOX)
+	_adjust.initialize(app_token, is_sandbox)
 
 func _on_track_event_pressed() -> void:
-	_log("Tracking event: " + EVENT_TOKEN)
-	_adjust.track_event(EVENT_TOKEN)
+	_log("Tracking event: " + event_token)
+	_adjust.track_event(event_token)
 
 func _on_track_revenue_pressed() -> void:
 	_log("Tracking revenue: 0.99 USD")
-	_adjust.track_event_with_revenue(EVENT_TOKEN, 0.99, "USD")
+	_adjust.track_event_with_revenue(event_token, 0.99, "USD")
 
 func _on_forget_me_pressed() -> void:
 	_log("Requesting GDPR Forget Me...")
