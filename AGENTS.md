@@ -4,12 +4,12 @@ This file is the authoritative source of truth for ALL AI agents (Gemini, Claude
 **Read this first** to minimize token usage and ensure architectural consistency.
 
 ## 🏗️ Repository Architecture
-- **Primary Branch:** `master`
+- **Primary Branch:** `main`
 - **GDScript (Core):** `platforms/godot_editor/addons/adjust/`
   - `adjust.gd`: Main entry point.
   - `internal/`: Logic. **Rule: No `class_name` here, use `preload`.**
   - `gdscript/src/api/AdjustPlugin.gd`: Public API with `class_name AdjustPlugin`.
-- **Native Bridges:** Android (Kotlin/JNI) in `platforms/android/`, iOS (Swift/Obj-C) in `platforms/ios/`.
+- **Native Bridges:** Android (Kotlin/JNI) in `platforms/android/`, iOS (Objective-C++) in `platforms/ios/`.
 
 ## 📦 Current Environment
 - **Godot Version:** 4.6.2 (Current target for builds and testing).
@@ -35,4 +35,5 @@ This file is the authoritative source of truth for ALL AI agents (Gemini, Claude
 ## 🔗 Key Files
 - `platforms/godot_editor/addons/adjust/gdscript/src/api/AdjustPlugin.gd` (Main API)
 - `platforms/android/src/core/src/main/java/com/somnigamestudios/godot/adjust/AdjustGodotPlugin.kt` (Android Bridge)
-- `platforms/ios/src/AdjustGodotPlugin.swift` (iOS Bridge)
+- `platforms/ios/src/AdjustGodotPlugin.mm` (iOS Bridge)
+

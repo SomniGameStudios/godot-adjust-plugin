@@ -45,3 +45,8 @@ platforms/godot_editor/ios/plugins/
 
 # Local credentials
 *credentials.json
+
+# Documentation build output
+site/
+.cache/
+

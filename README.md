@@ -1,13 +1,17 @@
-# Godot Adjust Plugin
+# <img src="platforms/godot_editor/icon.svg" width="36" valign="middle"> Godot Adjust Plugin
 
-Godot Adjust Plugin for Android and iOS. This plugin provides a bridge to the Adjust SDK v5.6.0.
+A lightweight and high-performance native wrapper for the **Adjust SDK v5.6.0** on Android and iOS, built specifically for Godot Engine.
+
+👉 **[Read the Documentation](https://somnigamestudios.github.io/godot-adjust-plugin/)** | **[Class API Reference](https://somnigamestudios.github.io/godot-adjust-plugin/gdscript_api/)**
+
+---
 
 ## Features
-- Install attribution tracking.
-- Revenue event tracking.
-- GDPR compliance (`gdpr_forget_me`).
-- ATT passthrough for iOS.
-- EU data residency support.
+- **Install Attribution:** Track campaigns, networks, and custom attributions.
+- **Events & Revenue:** Track standard events or events with custom monetary revenue (ISO 4217).
+- **Subscriptions:** Natively track iOS App Store and Android Play Store subscription purchases.
+- **Privacy Controls:** GDPR compliance (`gdpr_forget_me`) and ATT passthrough for iOS.
+- **Data Residency:** Built-in EU data residency and custom URL strategies.
 
 ## Architecture
 This plugin follows the "Editor Plugin" pattern, allowing easy management and export of native dependencies.
@@ -19,6 +23,9 @@ Use the provided build script:
 ```
 
 ## Documentation
+Full documentation, including API Reference and Testing Guides, is available at:
+👉 **[somnigamestudios.github.io/godot-adjust-plugin](https://somnigamestudios.github.io/godot-adjust-plugin/)**
+
 See `AGENTS.md` for architectural details and coding standards.
 
 ## Testing on iOS Simulator
@@ -63,9 +70,8 @@ Run the build script to compile the Android plugin AAR files:
 ### 2. Export from Godot
 1. Open the project in `platforms/godot_editor` with Godot 4.6.2.
 2. Go to **Project -> Export -> Android**.
-3. Enable **Use Custom Build** in the Android export options.
-4. Enable the **Adjust** plugin in the **Plugins** section.
-5. Click **Export Project** to generate the APK (e.g., `exports/android/adjust_sample.apk`).
+3. Enable **Use Custom Build** in the Android export options. (The Android plugin binary is integrated dynamically during export).
+4. Click **Export Project** to generate the APK (e.g., `exports/android/adjust_sample.apk`).
 
 ### 3. Run and Monitor Logs
 1. Install and run the APK on your Android device or emulator:
@@ -85,5 +91,4 @@ Run the build script to compile the Android plugin AAR files:
 2. Search for the retrieved **gps_adid** or **adid**.
 3. Trigger events in the app and verify they show up in real-time.
 4. To test a fresh install, click **Forget Device** in the Testing Console, uninstall the app from the device, and run again.
-
 
