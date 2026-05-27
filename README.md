@@ -13,6 +13,12 @@ A lightweight and high-performance native wrapper for the **Adjust SDK v5.6.0** 
 - **Privacy Controls:** GDPR compliance (`gdpr_forget_me`) and ATT passthrough for iOS.
 - **Data Residency:** Built-in EU data residency and custom URL strategies.
 
+## ⚙️ Installation
+
+1. Go to the [Releases](https://github.com/SomniGameStudios/godot-adjust-plugin/releases) page and download the latest `godot-adjust-plugin-v*.zip` file.
+2. Extract the ZIP contents into the root directory of your Godot project. This will automatically copy the pre-compiled binaries into the `addons/` and `ios/` folders of your project.
+3. Open your Godot project, navigate to **Project -> Project Settings -> Plugins**, and check **Enable** next to the **Adjust** plugin.
+
 ## Architecture
 This plugin follows the "Editor Plugin" pattern, allowing easy management and export of native dependencies.
 

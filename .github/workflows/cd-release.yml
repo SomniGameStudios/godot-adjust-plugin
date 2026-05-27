@@ -1,0 +1,100 @@
+name: "[CD] Build and Release"
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build Android AARs
+        working-directory: platforms/android
+        run: |
+          chmod +x gradlew
+          ./gradlew build -PgodotVersion=4.6.2
+          ./gradlew exportFiles -PpluginExportPath=../../platforms/godot_editor/addons/adjust/android/bin
+
+      - name: Upload Android Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-binaries
+          path: platforms/godot_editor/addons/adjust/android/bin/
+          if-no-files-found: error
+          retention-days: 1
+
+  build-ios:
+    name: Build iOS Binaries
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build iOS XCFramework
+        working-directory: platforms/ios
+        run: |
+          ./scripts/build.sh 4.6.2
+
+      - name: Upload iOS Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-binaries
+          path: platforms/godot_editor/ios/plugins/adjust/
+          if-no-files-found: error
+          retention-days: 1
+
+  release-finalize:
+    name: Finalize and Publish Release
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set plugin version
+        run: |
+          RAW_VERSION=$(grep "version=" platforms/godot_editor/addons/adjust/plugin.cfg | cut -d'"' -f2)
+          echo "PLUGIN_TAG=v${RAW_VERSION#v}" >> $GITHUB_ENV
+
+      - name: Create release packaging directories
+        run: |
+          mkdir -p release-staging/addons/adjust
+          mkdir -p release-staging/ios/plugins/adjust
+
+      - name: Copy plugin source templates
+        run: |
+          cp -R platforms/godot_editor/addons/adjust/* release-staging/addons/adjust/
+
+      - name: Download Android Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: android-binaries
+          path: release-staging/addons/adjust/android/bin
+
+      - name: Download iOS Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-binaries
+          path: release-staging/ios/plugins/adjust
+
+      - name: Create Release ZIP
+        run: |
+          cd release-staging
+          zip -r ../godot-adjust-plugin-${{ env.PLUGIN_TAG }}.zip addons ios
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ env.PLUGIN_TAG }} godot-adjust-plugin-${{ env.PLUGIN_TAG }}.zip --title "${{ env.PLUGIN_TAG }}" --generate-notes

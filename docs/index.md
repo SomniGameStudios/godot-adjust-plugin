@@ -14,10 +14,10 @@ Welcome to the documentation for the **Godot Adjust Plugin**. This addon provide
 
 ## Installation
 
-1. Copy the `addons/adjust` folder into your Godot project's `res://addons/` directory.
-2. Open your Godot project.
-3. Go to **Project -> Project Settings -> Plugins**.
-4. Locate the **Adjust** plugin and check **Enable**.
+1. Go to the [Releases](https://github.com/SomniGameStudios/godot-adjust-plugin/releases) page and download the latest `godot-adjust-plugin-v*.zip` file.
+2. Extract the ZIP contents into the root directory of your Godot project. This will automatically copy the pre-compiled native binaries into the `addons/` and `ios/` folders of your project.
+3. Open your Godot project, navigate to **Project -> Project Settings -> Plugins**, and check **Enable** next to the **Adjust** plugin.
+
 
 ---
 
