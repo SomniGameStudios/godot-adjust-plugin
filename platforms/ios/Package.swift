@@ -8,7 +8,7 @@ let package = Package(
         .library(
             name: "AdjustGodotPlugin",
             type: .static,
-            targets: ["AdjustGodotPlugin", "AdjustGodotBridge"]),
+            targets: ["AdjustGodotPlugin"]),
     ],
     dependencies: [
         .package(url: "https://github.com/adjust/ios_sdk", from: "5.6.0"),
@@ -19,17 +19,14 @@ let package = Package(
             dependencies: [
                 .product(name: "AdjustSdk", package: "ios_sdk"),
             ],
-            path: "src/swift"
-        ),
-        .target(
-            name: "AdjustGodotBridge",
-            dependencies: ["AdjustGodotPlugin"],
-            path: "src/bridge",
+            path: "src",
+            publicHeadersPath: "",
             cxxSettings: [
-                .headerSearchPath("../../include/godot"),
-                .headerSearchPath("../../include/godot/platform/ios"),
-                .headerSearchPath("../../include/godot/drivers/apple_embedded"),
-                .unsafeFlags(["-std=c++17"])
+                .headerSearchPath("../include/godot"),
+                .headerSearchPath("../include/godot/platform/ios"),
+                .headerSearchPath("../include/godot/drivers/apple_embedded"),
+                .unsafeFlags(["-std=c++17"]),
+                .define("DEBUG_ENABLED")
             ]
         )
     ]
