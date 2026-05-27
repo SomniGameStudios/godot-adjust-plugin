@@ -28,7 +28,8 @@ cd "$GODOT_FOLDER"
 
 echo ">>> Generating headers using scons..."
 export PYTHONWARNINGS="ignore::SyntaxWarning"
-/Users/gustavomaciel/Library/Python/3.9/bin/scons -j$(sysctl -n hw.ncpu) platform=ios target=template_release core/version_generated.gen.h core/disabled_classes.gen.h core/object/gdvirtual.gen.inc modules/modules_enabled.gen.h core/extension/gdextension_interface.gen.h
+scons -j$(sysctl -n hw.ncpu) platform=ios target=template_release core/version_generated.gen.h core/disabled_classes.gen.h core/object/gdvirtual.gen.inc modules/modules_enabled.gen.h core/extension/gdextension_interface.gen.h
+
 
 echo ">>> Replacing platforms/ios/include/godot with new headers..."
 rm -rf "$IOS_DIR/include/godot"

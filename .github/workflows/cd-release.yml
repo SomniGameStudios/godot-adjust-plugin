@@ -42,6 +42,21 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install SCons
+        run: |
+          python3 -m pip install scons
+
+      - name: Download and Generate Godot Headers
+        working-directory: platforms/ios
+        run: |
+          chmod +x scripts/download_and_generate_headers.sh
+          ./scripts/download_and_generate_headers.sh
+
       - name: Build iOS XCFramework
         working-directory: platforms/ios
         run: |
@@ -54,6 +69,7 @@ jobs:
           path: platforms/godot_editor/ios/plugins/adjust/
           if-no-files-found: error
           retention-days: 1
+
 
   release-finalize:
     name: Finalize and Publish Release
