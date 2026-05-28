@@ -33,6 +33,11 @@ import org.godotengine.godot.plugin.UsedByGodot
 
 class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
 
+    private var cachedUrls: Array<String>? = null
+    private var cachedUseSubdomains: Boolean = false
+    private var cachedIsDataResidency: Boolean = false
+    private var lastAttribution: AdjustAttribution? = null
+
     companion object {
         private const val TAG = "AdjustGodotPlugin"
     }
@@ -61,7 +66,12 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
 
         config.setLogLevel(if (isSandbox) LogLevel.VERBOSE else LogLevel.INFO)
         
+        cachedUrls?.let { urls ->
+            config.setUrlStrategy(urls.toList(), cachedUseSubdomains, cachedIsDataResidency)
+        }
+
         config.setOnAttributionChangedListener { attribution ->
+            lastAttribution = attribution
             val data = Dictionary()
             data["tracker_token"] = attribution.trackerToken
             data["tracker_name"] = attribution.trackerName
@@ -75,6 +85,11 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         }
 
         Adjust.initSdk(config)
+
+        Adjust.getAttribution { attribution ->
+            lastAttribution = attribution
+        }
+
         emitSignal("initialization_completed")
     }
 
@@ -114,6 +129,36 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
 
     @UsedByGodot
     fun set_url_strategy(urls: Array<String>, useSubdomains: Boolean, isDataResidency: Boolean) {
-        Log.i(TAG, "set_url_strategy called. Note: In v5 this must be set on config before initialization.")
+        cachedUrls = urls
+        cachedUseSubdomains = useSubdomains
+        cachedIsDataResidency = isDataResidency
+    }
+
+    @UsedByGodot
+    fun get_attribution(): Dictionary {
+        val data = Dictionary()
+        val attribution = lastAttribution
+        if (attribution != null) {
+            data["tracker_token"] = attribution.trackerToken ?: ""
+            data["tracker_name"] = attribution.trackerName ?: ""
+            data["network"] = attribution.network ?: ""
+            data["campaign"] = attribution.campaign ?: ""
+            data["adgroup"] = attribution.adgroup ?: ""
+            data["creative"] = attribution.creative ?: ""
+            data["click_label"] = attribution.clickLabel ?: ""
+        }
+        return data
+    }
+
+    @UsedByGodot
+    fun track_measurement_consent(enabled: Boolean) {
+        Adjust.trackMeasurementConsent(enabled)
+    }
+
+    @UsedByGodot
+    fun track_ad_revenue(source: String, revenue: Double, currency: String) {
+        val adRevenue = AdjustAdRevenue(source)
+        adRevenue.setRevenue(revenue, currency)
+        Adjust.trackAdRevenue(adRevenue)
     }
 }

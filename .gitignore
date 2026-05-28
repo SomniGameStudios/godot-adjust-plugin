@@ -54,4 +54,11 @@ site/
 test_empty_project/
 exports/
 
+# Antigravity CLI
+.antigravitycli/
+
+# Kotlin local configurations
+**/.*kotlin*/
+**/.*Kotlin*/
+
 

@@ -23,32 +23,26 @@ Welcome to the documentation for the **Godot Adjust Plugin**. This addon provide
 
 ## Quick Start (GDScript)
 
-To start tracking installs and events, instantiate and initialize the `AdjustPlugin` node:
+To start tracking installs and events, use the static methods and callbacks on the `AdjustPlugin` class:
 
 ```gdscript
 extends Node
 
-var adjust: AdjustPlugin
-
 func _ready() -> void:
-    # 1. Instantiate the plugin node
-    adjust = AdjustPlugin.new()
-    add_child(adjust)
+    # 1. Connect to static callbacks
+    AdjustPlugin.initialization_completed = _on_adjust_init_completed
+    AdjustPlugin.attribution_changed = _on_adjust_attribution_changed
     
-    # 2. Connect to signals
-    adjust.initialization_completed.connect(_on_adjust_init_completed)
-    adjust.attribution_changed.connect(_on_adjust_attribution_changed)
-    
-    # 3. Initialize with your App Token
+    # 2. Initialize with your App Token
     var app_token := "your_app_token"
     var is_sandbox := true # Set to false for Production
-    adjust.initialize(app_token, is_sandbox)
+    AdjustPlugin.initialize(app_token, is_sandbox)
 
 func _on_adjust_init_completed() -> void:
     print("Adjust SDK Initialized successfully!")
     
     # Track a custom event
-    adjust.track_event("your_event_token")
+    AdjustPlugin.track_event("your_event_token")
 
 func _on_adjust_attribution_changed(data: Dictionary) -> void:
     print("User Attribution Changed: ", data)

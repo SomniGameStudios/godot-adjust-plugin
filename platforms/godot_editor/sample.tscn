@@ -20,6 +20,13 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.1, 0.1, 0.12, 1)
 
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
+title = "Warning: Irreversible Action"
+initial_position = 2
+size = Vector2i(400, 150)
+dialog_text = "Calling GDPR Forget Me permanently opts out this device. This cannot be undone. Are you sure?"
+dialog_autowrap = true
+
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 13
@@ -63,9 +70,35 @@ layout_mode = 2
 text = "Track Revenue (0.99 USD)"
 
 [node name="ForgetMe" type="Button" parent="VBoxContainer"]
+self_modulate = Color(0.9, 0.3, 0.3, 1)
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 text = "GDPR Forget Me"
+
+[node name="RequestATT" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Request ATT (iOS)"
+
+[node name="GetAttribution" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Get Attribution"
+
+[node name="TrackAdRevenue" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Track Ad Revenue (0.45 USD)"
+
+[node name="ConsentTrue" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "GDPR Consent: YES"
+
+[node name="ConsentFalse" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "GDPR Consent: NO"
 
 [node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
@@ -85,3 +118,11 @@ autowrap_mode = 3
 [connection signal="pressed" from="VBoxContainer/TrackEvent" to="." method="_on_track_event_pressed"]
 [connection signal="pressed" from="VBoxContainer/TrackRevenue" to="." method="_on_track_revenue_pressed"]
 [connection signal="pressed" from="VBoxContainer/ForgetMe" to="." method="_on_forget_me_pressed"]
+[connection signal="pressed" from="VBoxContainer/RequestATT" to="." method="_on_request_att_pressed"]
+[connection signal="pressed" from="VBoxContainer/GetAttribution" to="." method="_on_get_attribution_pressed"]
+[connection signal="pressed" from="VBoxContainer/TrackAdRevenue" to="." method="_on_track_ad_revenue_pressed"]
+[connection signal="pressed" from="VBoxContainer/ConsentTrue" to="." method="_on_consent_true_pressed"]
+[connection signal="pressed" from="VBoxContainer/ConsentFalse" to="." method="_on_consent_false_pressed"]
+[connection signal="confirmed" from="ConfirmationDialog" to="." method="_on_forget_me_confirmed"]
+
+

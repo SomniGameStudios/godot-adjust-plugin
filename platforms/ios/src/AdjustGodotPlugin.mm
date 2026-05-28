@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #import <Foundation/Foundation.h>
+#import <AppTrackingTransparency/ATTrackingManager.h>
 #import <AdjustSdk/Adjust.h>
 #import <AdjustSdk/ADJConfig.h>
 #import <AdjustSdk/ADJEvent.h>
@@ -28,6 +29,7 @@
 #import <AdjustSdk/ADJThirdPartySharing.h>
 #import <AdjustSdk/ADJAppStoreSubscription.h>
 #import <AdjustSdk/ADJLogger.h>
+#import <AdjustSdk/ADJAdRevenue.h>
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
 
@@ -35,6 +37,11 @@ class AdjustGodotPlugin : public Object {
     GDCLASS(AdjustGodotPlugin, Object);
 
     static AdjustGodotPlugin *instance;
+
+    PackedStringArray cached_urls;
+    bool cached_use_subdomains = false;
+    bool cached_is_data_residency = false;
+    bool has_cached_urls = false;
 
 protected:
     static void _bind_methods() {
@@ -45,12 +52,18 @@ protected:
         ClassDB::bind_method(D_METHOD("disable_third_party_sharing"), &AdjustGodotPlugin::disable_third_party_sharing);
         ClassDB::bind_method(D_METHOD("gdpr_forget_me"), &AdjustGodotPlugin::gdpr_forget_me);
         ClassDB::bind_method(D_METHOD("set_url_strategy", "urls", "use_subdomains", "is_data_residency"), &AdjustGodotPlugin::set_url_strategy);
+        ClassDB::bind_method(D_METHOD("request_tracking_authorization"), &AdjustGodotPlugin::request_tracking_authorization);
+        ClassDB::bind_method(D_METHOD("get_attribution"), &AdjustGodotPlugin::get_attribution);
+        ClassDB::bind_method(D_METHOD("track_measurement_consent", "enabled"), &AdjustGodotPlugin::track_measurement_consent);
+        ClassDB::bind_method(D_METHOD("track_ad_revenue", "source", "revenue", "currency"), &AdjustGodotPlugin::track_ad_revenue);
         
         ADD_SIGNAL(MethodInfo("attribution_changed", PropertyInfo(Variant::DICTIONARY, "data")));
         ADD_SIGNAL(MethodInfo("initialization_completed"));
     }
 
 public:
+    ADJAttribution *last_attribution = nil;
+
     void initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval);
     void track_event(String p_event_token);
     void track_event_with_revenue(String p_event_token, double p_amount, String p_currency);
@@ -58,6 +71,10 @@ public:
     void disable_third_party_sharing();
     void gdpr_forget_me();
     void set_url_strategy(PackedStringArray p_urls, bool p_use_subdomains, bool p_is_data_residency);
+    void request_tracking_authorization();
+    Dictionary get_attribution();
+    void track_measurement_consent(bool p_enabled);
+    void track_ad_revenue(String p_source, double p_revenue, String p_currency);
 
     static AdjustGodotPlugin *get_singleton() {
         return instance;
@@ -93,6 +110,7 @@ AdjustGodotPlugin *AdjustGodotPlugin::instance = nullptr;
     if (attribution == nil) return;
     AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
     if (plugin) {
+        plugin->last_attribution = attribution;
         Dictionary data;
         data["tracker_token"] = attribution.trackerToken ? String::utf8([attribution.trackerToken UTF8String]) : "";
         data["tracker_name"] = attribution.trackerName ? String::utf8([attribution.trackerName UTF8String]) : "";
@@ -121,7 +139,27 @@ void AdjustGodotPlugin::initialize(String p_app_token, bool p_is_sandbox, int p_
     [config setAttConsentWaitingInterval:(NSUInteger)p_att_wait_interval];
     [config setDelegate:[AdjustGodotDelegate sharedInstance]];
     
+    [config disableAppTrackingTransparencyUsage];
+    
+    if (has_cached_urls) {
+        NSMutableArray *urlArray = [[NSMutableArray alloc] init];
+        for (int i = 0; i < cached_urls.size(); i++) {
+            NSString *urlStr = [NSString stringWithUTF8String:cached_urls[i].utf8().get_data()];
+            [urlArray addObject:urlStr];
+        }
+        [config setUrlStrategy:urlArray
+                 useSubdomains:cached_use_subdomains ? YES : NO
+                isDataResidency:cached_is_data_residency ? YES : NO];
+    }
+    
     [Adjust initSdk:config];
+    
+    [Adjust attributionWithCompletionHandler:^(ADJAttribution * _Nullable attribution) {
+        AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
+        if (plugin && attribution) {
+            plugin->last_attribution = attribution;
+        }
+    }];
     
     emit_signal("initialization_completed");
 }
@@ -163,7 +201,48 @@ void AdjustGodotPlugin::gdpr_forget_me() {
 }
 
 void AdjustGodotPlugin::set_url_strategy(PackedStringArray p_urls, bool p_use_subdomains, bool p_is_data_residency) {
-    NSLog(@"AdjustGodotPlugin: set_url_strategy called. Note: In v5 this must be set on config before initialization.");
+    cached_urls = p_urls;
+    cached_use_subdomains = p_use_subdomains;
+    cached_is_data_residency = p_is_data_residency;
+    has_cached_urls = true;
+}
+
+void AdjustGodotPlugin::request_tracking_authorization() {
+    if (@available(iOS 14, *)) {
+        [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {
+            NSLog(@"AdjustGodotPlugin: ATT authorization status: %lu", (unsigned long)status);
+        }];
+    }
+}
+
+Dictionary AdjustGodotPlugin::get_attribution() {
+    Dictionary data;
+    ADJAttribution *attribution = last_attribution;
+    if (attribution != nil) {
+        data["tracker_token"] = attribution.trackerToken ? String::utf8([attribution.trackerToken UTF8String]) : "";
+        data["tracker_name"] = attribution.trackerName ? String::utf8([attribution.trackerName UTF8String]) : "";
+        data["network"] = attribution.network ? String::utf8([attribution.network UTF8String]) : "";
+        data["campaign"] = attribution.campaign ? String::utf8([attribution.campaign UTF8String]) : "";
+        data["adgroup"] = attribution.adgroup ? String::utf8([attribution.adgroup UTF8String]) : "";
+        data["creative"] = attribution.creative ? String::utf8([attribution.creative UTF8String]) : "";
+        data["click_label"] = attribution.clickLabel ? String::utf8([attribution.clickLabel UTF8String]) : "";
+    }
+    return data;
+}
+
+void AdjustGodotPlugin::track_measurement_consent(bool p_enabled) {
+    [Adjust trackMeasurementConsent:p_enabled ? YES : NO];
+}
+
+void AdjustGodotPlugin::track_ad_revenue(String p_source, double p_revenue, String p_currency) {
+    NSString *sourceStr = [NSString stringWithUTF8String:p_source.utf8().get_data()];
+    NSString *currencyStr = [NSString stringWithUTF8String:p_currency.utf8().get_data()];
+    
+    ADJAdRevenue *adRevenue = [[ADJAdRevenue alloc] initWithSource:sourceStr];
+    if (adRevenue) {
+        [adRevenue setRevenue:p_revenue currency:currencyStr];
+        [Adjust trackAdRevenue:adRevenue];
+    }
 }
 
 // Godot entry points
