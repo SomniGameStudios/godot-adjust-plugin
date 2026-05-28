@@ -1,0 +1,10 @@
+[config]
+name="AdjustGodotPlugin"
+binary="AdjustGodotPlugin.xcframework"
+initialization="init_adjust_plugin"
+deinitialization="deinit_adjust_plugin"
+
+[dependencies]
+linked=[]
+system=["AppTrackingTransparency.framework", "AdServices.framework", "StoreKit.framework", "iAd.framework"]
+linker_flags=["-ObjC"]

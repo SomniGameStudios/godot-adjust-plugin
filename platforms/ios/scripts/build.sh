@@ -115,6 +115,7 @@ for CONFIG in Release Debug; do
     echo ">>> Copying $XCFW_NAME to Godot editor..."
     rm -rf "$DEST_PLUGINS/$XCFW_NAME"
     cp -R "$XCFW_PATH" "$DEST_PLUGINS/"
+    cp "$IOS_DIR/AdjustGodotPlugin.gdip" "$DEST_PLUGINS/"
 
     # Also copy the release framework as the default/non-suffix name
     if [ "$CONFIG" = "Release" ]; then
@@ -125,4 +126,5 @@ for CONFIG in Release Debug; do
 done
 
 echo ">>> iOS Build Complete"
+
 
