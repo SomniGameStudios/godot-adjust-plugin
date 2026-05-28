@@ -50,3 +50,8 @@ platforms/godot_editor/ios/plugins/
 site/
 .cache/
 
+# Local Test Projects and Exports
+test_empty_project/
+exports/
+
+

@@ -27,12 +27,12 @@ static func patch(path: String) -> void:
 	if content.is_empty():
 		return
 	
-	if content.contains("AD0000000000000000000001"):
+	if content.contains("AE0000000000000000000001"):
 		return
 
-	var local_ref_id := "AD0000000000000000000001"
-	var product_dep_id := "AD0000000000000000000002"
-	var build_file_id := "AD0000000000000000000003"
+	var local_ref_id := "AE0000000000000000000001"
+	var product_dep_id := "AE0000000000000000000002"
+	var build_file_id := "AE0000000000000000000003"
 
 	if not content.contains("/* Begin XCLocalSwiftPackageReference section */"):
 		content = content.replace("/* End PBXGroup section */", "/* End PBXGroup section */\n\n/* Begin XCLocalSwiftPackageReference section */\n/* End XCLocalSwiftPackageReference section */")
@@ -40,19 +40,19 @@ static func patch(path: String) -> void:
 	if not content.contains("/* Begin XCSwiftPackageProductDependency section */"):
 		content = content.replace("/* End XCLocalSwiftPackageReference section */", "/* End XCLocalSwiftPackageReference section */\n\n/* Begin XCSwiftPackageProductDependency section */\n/* End XCSwiftPackageProductDependency section */")
 
-	var local_ref_def := "		" + local_ref_id + ' /* XCLocalSwiftPackageReference "." */ = {\n			isa = XCLocalSwiftPackageReference;\n			relativePath = ".";\n		};\n'
+	var local_ref_def := "		" + local_ref_id + ' /* XCLocalSwiftPackageReference "SomniAdjustDeps" */ = {\n			isa = XCLocalSwiftPackageReference;\n			relativePath = "SomniAdjustDeps";\n		};\n'
 	content = content.replace("/* End XCLocalSwiftPackageReference section */", local_ref_def + "/* End XCLocalSwiftPackageReference section */")
 
-	var product_dep_def := "		" + product_dep_id + ' /* SomniAdjustDeps */ = {\n			isa = XCSwiftPackageProductDependency;\n			package = ' + local_ref_id + ' /* XCLocalSwiftPackageReference "." */;\n			productName = "SomniAdjustDeps";\n		};\n'
+	var product_dep_def := "		" + product_dep_id + ' /* SomniAdjustDeps */ = {\n			isa = XCSwiftPackageProductDependency;\n			package = ' + local_ref_id + ' /* XCLocalSwiftPackageReference "SomniAdjustDeps" */;\n			productName = "SomniAdjustDeps";\n		};\n'
 	content = content.replace("/* End XCSwiftPackageProductDependency section */", product_dep_def + "/* End XCSwiftPackageProductDependency section */")
 
 	var build_file_def := "		" + build_file_id + ' /* SomniAdjustDeps in Frameworks */ = {isa = PBXBuildFile; productRef = ' + product_dep_id + " /* SomniAdjustDeps */; };\n"
 	content = content.replace("/* Begin PBXBuildFile section */", "/* Begin PBXBuildFile section */\n" + build_file_def)
 
 	if content.contains("packageReferences = ("):
-		content = content.replace("packageReferences = (", "packageReferences = (\n				" + local_ref_id + ' /* XCLocalSwiftPackageReference "." */,')
+		content = content.replace("packageReferences = (", "packageReferences = (\n				" + local_ref_id + ' /* XCLocalSwiftPackageReference "SomniAdjustDeps" */,')
 	else:
-		content = content.replace("productRefGroup =", "packageReferences = (\n				" + local_ref_id + ' /* XCLocalSwiftPackageReference "." */,\n			);\n			productRefGroup =')
+		content = content.replace("productRefGroup =", "packageReferences = (\n				" + local_ref_id + ' /* XCLocalSwiftPackageReference "SomniAdjustDeps" */,\n			);\n			productRefGroup =')
 
 	if content.contains("packageProductDependencies = ("):
 		content = content.replace("packageProductDependencies = (", "packageProductDependencies = (\n				" + product_dep_id + " /* SomniAdjustDeps */,")

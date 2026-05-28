@@ -72,6 +72,10 @@ func _patch_xcodeproj(export_dir: String) -> void:
 		file_name = dir.get_next()
 
 func _generate_package_swift(export_dir: String) -> void:
+	var source_dir := export_dir.path_join("SomniAdjustDeps")
+	if not DirAccess.dir_exists_absolute(source_dir):
+		DirAccess.make_dir_recursive_absolute(source_dir)
+			
 	var content := """// swift-tools-version:5.9
 import PackageDescription
 
@@ -92,12 +96,12 @@ let package = Package(
             dependencies: [
                 .product(name: "AdjustSdk", package: "ios_sdk"),
             ],
-            path: "SomniAdjustDeps"
+            path: "."
         )
     ]
 )
 """
-	var file := FileAccess.open(export_dir.path_join("Package.swift"), FileAccess.WRITE)
+	var file := FileAccess.open(source_dir.path_join("Package.swift"), FileAccess.WRITE)
 	if file:
 		file.store_string(content)
 		file.close()
