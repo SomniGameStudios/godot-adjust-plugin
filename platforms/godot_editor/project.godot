@@ -13,7 +13,7 @@ config_version=5
 config/name="Godot Adjust Plugin Sample"
 run/main_scene="res://sample.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://ba5qe5i2epbiv"
 
 [display]
 

@@ -20,8 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class_name MobileSingletonPlugin
-
 static func _get_plugin(plugin_name: String, is_required := true) -> Object:
 	if (Engine.has_singleton(plugin_name)):
 		return Engine.get_singleton(plugin_name)

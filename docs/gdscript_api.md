@@ -2,20 +2,20 @@
 
 This page describes the API reference for the `AdjustPlugin` class.
 
-## Signals
+## Callbacks
 
 ### `initialization_completed`
-Emitted when the Adjust SDK initialization finishes successfully.
+Called when the Adjust SDK initialization finishes successfully.
 ```gdscript
-signal initialization_completed
+static var initialization_completed: Callable
 ```
 
 ### `attribution_changed`
-Emitted when Adjust receives new user attribution data (from install campaigns, deep links, etc.).
+Called when Adjust receives new user attribution data (from install campaigns, deep links, etc.).
 ```gdscript
-signal attribution_changed(data: Dictionary)
+static var attribution_changed: Callable
 ```
-The `data` Dictionary contains:
+The `data` Dictionary passed to the callback contains:
 * `tracker_token` (String)
 * `tracker_name` (String)
 * `network` (String)
@@ -31,7 +31,7 @@ The `data` Dictionary contains:
 ### `initialize`
 Initializes the Adjust SDK. Call this as early as possible.
 ```gdscript
-func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30) -> void
+static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30) -> void
 ```
 * **`app_token`**: Your Adjust app token from the dashboard.
 * **`is_sandbox`**: Set to `true` for testing/sandbox mode. Set to `false` for production builds.
@@ -42,7 +42,7 @@ func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30
 ### `track_event`
 Tracks a custom event by token.
 ```gdscript
-func track_event(event_token: String) -> void
+static func track_event(event_token: String) -> void
 ```
 * **`event_token`**: The token identifier for the event defined in the Adjust dashboard.
 
@@ -51,7 +51,7 @@ func track_event(event_token: String) -> void
 ### `track_event_with_revenue`
 Tracks a custom event with associated monetary revenue.
 ```gdscript
-func track_event_with_revenue(event_token: String, amount: float, currency: String) -> void
+static func track_event_with_revenue(event_token: String, amount: float, currency: String) -> void
 ```
 * **`event_token`**: The token identifier for the event.
 * **`amount`**: The value of the revenue event (e.g., `0.99`).
@@ -62,7 +62,7 @@ func track_event_with_revenue(event_token: String, amount: float, currency: Stri
 ### `track_play_store_subscription`
 *(Android Only)* Tracks subscription purchases via the Google Play Store.
 ```gdscript
-func track_play_store_subscription(
+static func track_play_store_subscription(
     price: int, 
     currency: String, 
     sku: String, 
@@ -77,7 +77,7 @@ func track_play_store_subscription(
 ### `track_app_store_subscription`
 *(iOS Only)* Tracks subscription purchases via the Apple App Store.
 ```gdscript
-func track_app_store_subscription(
+static func track_app_store_subscription(
     price: String, 
     currency: String, 
     transaction_id: String
@@ -89,7 +89,7 @@ func track_app_store_subscription(
 ### `disable_third_party_sharing`
 Disables data sharing with third-party partners (e.g., for privacy compliance).
 ```gdscript
-func disable_third_party_sharing() -> void
+static func disable_third_party_sharing() -> void
 ```
 
 ---
@@ -99,7 +99,7 @@ Requests the deletion of the user's historical analytics data from Adjust server
 !!! warning
     This action is irreversible. Future events and sessions from this user will not be tracked.
 ```gdscript
-func gdpr_forget_me() -> void
+static func gdpr_forget_me() -> void
 ```
 
 ---
@@ -109,9 +109,47 @@ Configures a custom URL strategy for data collection (e.g., for EU data residenc
 !!! info "Important"
     This must be called **before** calling `initialize()`.
 ```gdscript
-func set_url_strategy(urls: PackedStringArray, use_subdomains: bool, is_data_residency: bool) -> void
+static func set_url_strategy(urls: PackedStringArray, use_subdomains: bool, is_data_residency: bool) -> void
 ```
 
 * **`urls`**: Custom domain endpoints.
 * **`use_subdomains`**: Enable subdomain fallback strategies.
 * **`is_data_residency`**: Enable strict data residency constraints.
+
+---
+
+### `request_tracking_authorization`
+*(iOS Only)* Prompts the user with the App Tracking Transparency (ATT) dialog.
+```gdscript
+static func request_tracking_authorization() -> void
+```
+
+---
+
+### `get_attribution`
+Synchronously retrieves the current user attribution cached by the SDK.
+```gdscript
+static func get_attribution() -> Dictionary
+```
+Returns a Dictionary with keys like `tracker_token`, `tracker_name`, `network`, `campaign`, `adgroup`, `creative`, and `click_label`.
+
+---
+
+### `track_measurement_consent`
+Tracks the GDPR measurement consent status.
+```gdscript
+static func track_measurement_consent(enabled: bool) -> void
+```
+* **`enabled`**: `true` to opt-in to measurement tracking; `false` to opt-out.
+
+---
+
+### `track_ad_revenue`
+Tracks impression-level ad revenue (e.g. from AdMob, AppLovin).
+```gdscript
+static func track_ad_revenue(source: String, revenue: float, currency: String) -> void
+```
+* **`source`**: The source of the ad revenue (e.g. `"admob_sdk"`).
+* **`revenue`**: The ad revenue amount.
+* **`currency`**: The ISO 4217 currency code (e.g. `"USD"`).
+
