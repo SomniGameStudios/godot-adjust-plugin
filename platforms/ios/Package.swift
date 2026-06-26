@@ -11,7 +11,7 @@ let package = Package(
             targets: ["AdjustGodotPlugin"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/adjust/ios_sdk", from: "5.6.0"),
+        .package(url: "https://github.com/adjust/ios_sdk", exact: "5.6.0"),
     ],
     targets: [
         .target(

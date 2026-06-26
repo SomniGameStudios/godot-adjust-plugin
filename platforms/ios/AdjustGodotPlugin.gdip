@@ -6,5 +6,5 @@ deinitialization="deinit_adjust_plugin"
 
 [dependencies]
 linked=[]
-system=["AppTrackingTransparency.framework", "AdServices.framework", "StoreKit.framework", "iAd.framework"]
+system=["AppTrackingTransparency.framework", "AdServices.framework", "AdSupport.framework", "StoreKit.framework", "SystemConfiguration.framework", "CoreTelephony.framework", "WebKit.framework"]
 linker_flags=["-ObjC"]

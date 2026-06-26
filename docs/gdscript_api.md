@@ -31,11 +31,12 @@ The `data` Dictionary passed to the callback contains:
 ### `initialize`
 Initializes the Adjust SDK. Call this as early as possible.
 ```gdscript
-static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30) -> void
+static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30, fb_app_id: String = "") -> void
 ```
 * **`app_token`**: Your Adjust app token from the dashboard.
 * **`is_sandbox`**: Set to `true` for testing/sandbox mode. Set to `false` for production builds.
 * **`att_wait_interval`**: *(iOS only)* The time (in seconds) the SDK waits for the user to approve App Tracking Transparency (ATT) dialog before sending install data. Default: `30` seconds.
+* **`fb_app_id`**: *(optional)* The Facebook App ID. Provide it to enable the Meta partner integration (Meta Install Referrer on Android). Leave empty to disable. Default: `""`.
 
 ---
 

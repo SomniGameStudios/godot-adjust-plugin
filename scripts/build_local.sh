@@ -61,13 +61,17 @@ build_android() {
 
 build_ios() {
     echo ">>> Building iOS ($GODOT_VERSION)..."
-    cd "$ROOT_DIR/platforms/ios" && ./scripts/build.sh "$GODOT_VERSION" || exit 1
-    
-    ARCHIVE=$(ls -1 bin/release/somni-godot-adjust-ios-v${GODOT_VERSION}.zip 2>/dev/null | tail -n 1)
-    if [ -f "$ARCHIVE" ]; then
-        mkdir -p "$DEST/addons/adjust/ios/plugins/"
-        unzip -qo "$ARCHIVE" -d "$DEST/addons/adjust/ios/plugins/" || exit 1
+    cd "$ROOT_DIR/platforms/ios" || exit 1
+
+    # build.sh compiles against generated Godot headers under include/godot
+    # (gitignored). Generate them automatically when missing so a clean
+    # checkout builds in a single command.
+    if [ ! -d "$ROOT_DIR/platforms/ios/include/godot" ]; then
+        echo ">>> Godot headers missing; generating..."
+        ./scripts/download_and_generate_headers.sh || exit 1
     fi
+
+    ./scripts/build.sh "$GODOT_VERSION" || exit 1
 }
 
 case "$PLATFORM" in

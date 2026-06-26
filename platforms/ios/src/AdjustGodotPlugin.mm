@@ -45,7 +45,7 @@ class AdjustGodotPlugin : public Object {
 
 protected:
     static void _bind_methods() {
-        ClassDB::bind_method(D_METHOD("initialize", "app_token", "is_sandbox", "att_wait_interval"), &AdjustGodotPlugin::initialize);
+        ClassDB::bind_method(D_METHOD("initialize", "app_token", "is_sandbox", "att_wait_interval", "fb_app_id"), &AdjustGodotPlugin::initialize);
         ClassDB::bind_method(D_METHOD("track_event", "event_token"), &AdjustGodotPlugin::track_event);
         ClassDB::bind_method(D_METHOD("track_event_with_revenue", "event_token", "amount", "currency"), &AdjustGodotPlugin::track_event_with_revenue);
         ClassDB::bind_method(D_METHOD("track_app_store_subscription", "price", "currency", "transaction_id"), &AdjustGodotPlugin::track_app_store_subscription);
@@ -64,7 +64,7 @@ protected:
 public:
     ADJAttribution *last_attribution = nil;
 
-    void initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval);
+    void initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval, String p_fb_app_id);
     void track_event(String p_event_token);
     void track_event_with_revenue(String p_event_token, double p_amount, String p_currency);
     void track_app_store_subscription(String p_price, String p_currency, String p_transaction_id);
@@ -125,22 +125,24 @@ AdjustGodotPlugin *AdjustGodotPlugin::instance = nullptr;
 
 @end
 
-void AdjustGodotPlugin::initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval) {
+void AdjustGodotPlugin::initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval, String p_fb_app_id) {
     NSString *appTokenStr = [NSString stringWithUTF8String:p_app_token.utf8().get_data()];
     NSString *environment = p_is_sandbox ? ADJEnvironmentSandbox : ADJEnvironmentProduction;
-    
+
     ADJConfig *config = [[ADJConfig alloc] initWithAppToken:appTokenStr environment:environment];
     if (config == nil) {
         NSLog(@"AdjustGodotPlugin: Failed to create ADJConfig");
         return;
     }
-    
+
     [config setLogLevel:p_is_sandbox ? ADJLogLevelVerbose : ADJLogLevelInfo];
     [config setAttConsentWaitingInterval:(NSUInteger)p_att_wait_interval];
     [config setDelegate:[AdjustGodotDelegate sharedInstance]];
-    
-    [config disableAppTrackingTransparencyUsage];
-    
+
+    // iOS has no Facebook App ID setter; the SDK reads the FB attribution ID
+    // automatically. fb_app_id only applies to the Android Meta Install Referrer.
+    (void)p_fb_app_id;
+
     if (has_cached_urls) {
         NSMutableArray *urlArray = [[NSMutableArray alloc] init];
         for (int i = 0; i < cached_urls.size(); i++) {

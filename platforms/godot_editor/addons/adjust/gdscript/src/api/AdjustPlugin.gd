@@ -35,9 +35,13 @@ static func _static_init() -> void:
 		MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
 		MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
 
-static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30) -> void:
-	if _plugin:
-		_plugin.initialize(app_token, is_sandbox, att_wait_interval)
+static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30, fb_app_id: String = "") -> void:
+	if not _plugin:
+		var platform := OS.get_name()
+		if platform == "Android" or platform == "iOS":
+			push_error("AdjustPlugin: native plugin unavailable on %s; Adjust will not track. Check the plugin is enabled in the export." % platform)
+		return
+	_plugin.initialize(app_token, is_sandbox, att_wait_interval, fb_app_id)
 
 static func track_event(event_token: String) -> void:
 	if _plugin:
