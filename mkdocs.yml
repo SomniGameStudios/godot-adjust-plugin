@@ -44,11 +44,6 @@ markdown_extensions:
   - pymdownx.mark
   - attr_list
 
-extra:
-  version:
-    provider: mike
-    default: stable
-
 plugins:
   - search
 
