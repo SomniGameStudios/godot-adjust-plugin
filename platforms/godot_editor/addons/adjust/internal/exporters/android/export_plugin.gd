@@ -49,5 +49,4 @@ func _get_android_manifest_element(platform: EditorExportPlatform, debug: bool) 
 	return """
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 	"""

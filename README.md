@@ -34,6 +34,30 @@ Full documentation, including API Reference and Testing Guides, is available at:
 
 See `AGENTS.md` for architectural details and coding standards.
 
+## Demo Project Setup
+
+The demo in `platforms/godot_editor` exercises every plugin API (initialize, events, revenue, ad revenue, subscription, ATT, measurement consent, attribution, and GDPR forget-me).
+
+1. Provide your Adjust **sandbox** tokens (gitignored, so they are never committed):
+
+   ```bash
+   cd platforms/godot_editor
+   cp test_credentials.json.example test_credentials.json
+   ```
+
+   Fill in your app token and event token; they load automatically on startup (`is_sandbox` defaults to `true`).
+
+2. `export_presets.cfg` is gitignored, so your real signing values are never committed. Copy the committed template, which already has the plugin enabled — keep `plugins/AdjustGodotPlugin=true` (iOS) and `Use Gradle Build` (Android) so the native plugin is bundled:
+
+   ```bash
+   cd platforms/godot_editor
+   cp export_presets.cfg.example export_presets.cfg
+   ```
+
+   Then set your Apple **Team ID** and **bundle identifier** in Godot before exporting.
+
+Then follow the per-platform steps below to build onto a device.
+
 ## Testing on iOS Simulator
 
 ### 1. Compile the Plugin for Simulator

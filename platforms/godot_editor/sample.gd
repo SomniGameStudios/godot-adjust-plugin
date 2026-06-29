@@ -22,21 +22,32 @@
 
 extends Control
 
+const COLOR_IDLE := Color(0.4, 0.4, 0.44)
+const COLOR_OK := Color(0.18, 0.62, 0.28)
+const COLOR_WARN := Color(0.84, 0.5, 0.1)
+
 # --- CONFIGURATION ---
+# Values are loaded from res://test_credentials.json when present (gitignored);
+# copy test_credentials.json.example to get started. The defaults below keep the
+# demo running in-editor without real tokens.
 var app_token := "your_app_token"
 var event_token := "your_event_token"
 var is_sandbox := true
 var fb_app_id := ""
 
-@onready var status_label := $VBoxContainer/StatusLabel
-@onready var log_label := $VBoxContainer/ScrollContainer/LogLabel
+@onready var status_label: Label = %StatusLabel
+@onready var output: RichTextLabel = %OutputPanel
 
 func _ready() -> void:
 	_load_credentials()
+	_set_status("Not initialized", COLOR_IDLE)
+
 	var platform := OS.get_name()
 	var found := Engine.has_singleton("AdjustGodotPlugin")
-	_log("Sample Ready. Platform: %s. Plugin found: %s" % [platform, str(found)])
-	
+	_log("ready", "Platform: %s | Native plugin found: %s" % [platform, str(found)])
+	if not found and (platform == "Android" or platform == "iOS"):
+		_log("warn", "Adjust native singleton missing — export with the plugin enabled.")
+
 	AdjustPlugin.initialization_completed = _on_adjust_init_completed
 	AdjustPlugin.attribution_changed = _on_adjust_attribution_changed
 
@@ -44,82 +55,104 @@ func _load_credentials() -> void:
 	var path := "res://test_credentials.json"
 	if not FileAccess.file_exists(path):
 		return
-	
 	var file := FileAccess.open(path, FileAccess.READ)
 	if not file:
 		return
-	
-	var content := file.get_as_text()
-	var json_data := JSON.parse_string(content) as Dictionary
+	var json_data := JSON.parse_string(file.get_as_text()) as Dictionary
 	if json_data:
-		if json_data.has("app_token"):
-			app_token = json_data["app_token"]
-		if json_data.has("event_token"):
-			event_token = json_data["event_token"]
-		if json_data.has("is_sandbox"):
-			is_sandbox = json_data["is_sandbox"]
-		if json_data.has("fb_app_id"):
-			fb_app_id = json_data["fb_app_id"]
+		app_token = json_data.get("app_token", app_token)
+		event_token = json_data.get("event_token", event_token)
+		is_sandbox = json_data.get("is_sandbox", is_sandbox)
+		fb_app_id = json_data.get("fb_app_id", fb_app_id)
 
-func _log(message: String) -> void:
-	print("[AdjustSample] ", message)
-	if log_label:
-		log_label.text += "\n> " + message
+# --- Setup ---
 
 func _on_initialize_pressed() -> void:
-	_log("Initializing Adjust...")
+	var env := "sandbox" if is_sandbox else "production"
+	_log("init", "Initializing Adjust (%s)..." % env)
+	_set_status("Initializing...", COLOR_WARN)
 	AdjustPlugin.initialize(app_token, is_sandbox, 30, fb_app_id)
 
+func _on_request_att_pressed() -> void:
+	_log("att", "Requesting ATT tracking authorization...")
+	AdjustPlugin.request_tracking_authorization()
+
+# --- Events & Revenue ---
+
 func _on_track_event_pressed() -> void:
-	_log("Tracking event: " + event_token)
+	_log("event", "Tracking event: %s" % event_token)
 	AdjustPlugin.track_event(event_token)
 
 func _on_track_revenue_pressed() -> void:
-	_log("Tracking revenue: 0.99 USD")
+	_log("revenue", "Tracking revenue: 0.99 USD")
 	AdjustPlugin.track_event_with_revenue(event_token, 0.99, "USD")
+
+func _on_track_ad_revenue_pressed() -> void:
+	_log("ad_revenue", "Tracking ad revenue: 0.45 USD (AppLovin)")
+	AdjustPlugin.track_ad_revenue("AppLovin", 0.45, "USD")
+
+# --- Subscription ---
+
+func _on_track_subscription_pressed() -> void:
+	var platform := OS.get_name()
+	if platform == "iOS":
+		_log("subscription", "Tracking App Store subscription: 9.99 USD (test)")
+		AdjustPlugin.track_app_store_subscription("9.99", "USD", "test_transaction_id")
+	elif platform == "Android":
+		_log("subscription", "Tracking Play Store subscription: 9990000 micros (test)")
+		AdjustPlugin.track_play_store_subscription(
+			9990000, "USD", "test_sku", "test_order_id",
+			"test_signature", "test_purchase_token"
+		)
+	else:
+		_log("subscription", "Subscription tracking is only available on mobile platforms.")
+
+# --- Attribution ---
+
+func _on_get_attribution_pressed() -> void:
+	_log("attribution", "Current attribution: %s" % str(AdjustPlugin.get_attribution()))
+
+# --- Privacy & Consent ---
+
+func _on_consent_true_pressed() -> void:
+	_log("consent", "Measurement consent: TRUE")
+	AdjustPlugin.track_measurement_consent(true)
+
+func _on_consent_false_pressed() -> void:
+	_log("consent", "Measurement consent: FALSE")
+	AdjustPlugin.track_measurement_consent(false)
 
 func _on_forget_me_pressed() -> void:
 	$ConfirmationDialog.popup_centered()
 
 func _on_forget_me_confirmed() -> void:
-	_log("Requesting GDPR Forget Me...")
+	_log("gdpr", "Requesting GDPR Forget Me (irreversible)...")
 	AdjustPlugin.gdpr_forget_me()
 
-func _on_request_att_pressed() -> void:
-	_log("Requesting ATT tracking authorization...")
-	AdjustPlugin.request_tracking_authorization()
-
-func _on_get_attribution_pressed() -> void:
-	var attr := AdjustPlugin.get_attribution()
-	_log("Current Attribution: " + str(attr))
-
-func _on_track_ad_revenue_pressed() -> void:
-	_log("Tracking Ad Revenue: 0.45 USD from 'AppLovin'")
-	AdjustPlugin.track_ad_revenue("AppLovin", 0.45, "USD")
-
-func _on_track_subscription_pressed() -> void:
-	var platform := OS.get_name()
-	if platform == "iOS":
-		_log("Tracking App Store subscription: 9.99 USD (test transaction)")
-		AdjustPlugin.track_app_store_subscription("9.99", "USD", "test_transaction_id")
-	elif platform == "Android":
-		_log("Tracking Play Store subscription: 9990000 USD (micros, test purchase)")
-		AdjustPlugin.track_play_store_subscription(9990000, "USD", "test_sku", "test_order_id", "test_signature", "test_purchase_token")
-	else:
-		_log("Subscription tracking is only available on mobile platforms")
-
-func _on_consent_true_pressed() -> void:
-	_log("Setting Measurement Consent: True")
-	AdjustPlugin.track_measurement_consent(true)
-
-func _on_consent_false_pressed() -> void:
-	_log("Setting Measurement Consent: False")
-	AdjustPlugin.track_measurement_consent(false)
+# --- Callbacks ---
 
 func _on_adjust_init_completed() -> void:
-	_log("Callback: Initialization Completed!")
-	status_label.text = "Status: Initialized"
-	status_label.modulate = Color.GREEN
+	_log("init", "Initialization completed.")
+	_set_status("Initialized (%s)" % ("sandbox" if is_sandbox else "production"), COLOR_OK)
 
 func _on_adjust_attribution_changed(data: Dictionary) -> void:
-	_log("Callback: Attribution Changed! " + str(data))
+	_log("attribution", "Attribution changed: %s" % str(data))
+
+# --- UI helpers ---
+
+func _on_clear_log_pressed() -> void:
+	output.text = ""
+
+func _set_status(text: String, color: Color) -> void:
+	status_label.text = "● %s" % text
+	status_label.add_theme_color_override("font_color", color)
+
+func _log(context: String, message: String) -> void:
+	var t := Time.get_time_string_from_system()
+	print("[AdjustSample] %s: %s" % [context, message])
+	output.text += "[%s] %s: %s\n" % [t, context, message]
+	if not is_inside_tree():
+		return
+	await get_tree().process_frame
+	if is_inside_tree():
+		output.scroll_to_line(output.get_line_count())

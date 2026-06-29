@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://sample_scene"]
+[gd_scene load_steps=5 format=3 uid="uid://sample_scene"]
 
 [ext_resource type="Script" path="res://sample.gd" id="1_script"]
+[ext_resource type="Script" path="res://safe_area_container.gd" id="2_safe"]
+[ext_resource type="Theme" path="res://theme.tres" id="3_theme"]
+[ext_resource type="Script" path="res://scroll_container.gd" id="4_scroll"]
 
 [node name="Sample" type="Control"]
 layout_mode = 3
@@ -9,126 +12,190 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("3_theme")
 script = ExtResource("1_script")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.1, 0.1, 0.12, 1)
+color = Color(0.94902, 0.94902, 0.968627, 1)
 
-[node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
-title = "Warning: Irreversible Action"
-initial_position = 2
-size = Vector2i(400, 150)
-dialog_text = "Calling GDPR Forget Me permanently opts out this device. This cannot be undone. Are you sure?"
-dialog_autowrap = true
-
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="SafeArea" type="MarginContainer" parent="."]
 layout_mode = 1
-anchors_preset = 13
-anchor_left = 0.5
-anchor_right = 0.5
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -200.0
-offset_right = 200.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
-alignment = 1
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+script = ExtResource("2_safe")
 
-[node name="Title" type="Label" parent="VBoxContainer"]
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "ADJUST SDK"
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Adjust SDK Demo"
 horizontal_alignment = 1
 
-[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="SafeArea/Root"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "Status: Not Initialized"
+theme_override_font_sizes/font_size = 22
+text = "● Not initialized"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+[node name="Scroll" type="ScrollContainer" parent="SafeArea/Root"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+script = ExtResource("4_scroll")
 
-[node name="Initialize" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Initialize SDK"
-
-[node name="TrackEvent" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Track Simple Event"
-
-[node name="TrackRevenue" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Track Revenue (0.99 USD)"
-
-[node name="ForgetMe" type="Button" parent="VBoxContainer"]
-self_modulate = Color(0.9, 0.3, 0.3, 1)
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "GDPR Forget Me"
-
-[node name="RequestATT" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Request ATT (iOS)"
-
-[node name="GetAttribution" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Get Attribution"
-
-[node name="TrackAdRevenue" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Track Ad Revenue (0.45 USD)"
-
-[node name="ConsentTrue" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "GDPR Consent: YES"
-
-[node name="ConsentFalse" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "GDPR Consent: NO"
-
-[node name="TrackSubscription" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "Track Subscription (test)"
-
-[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
-layout_mode = 2
-
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-
-[node name="LogLabel" type="Label" parent="VBoxContainer/ScrollContainer"]
+[node name="Actions" type="VBoxContainer" parent="SafeArea/Root/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
-text = "Logs:"
-autowrap_mode = 3
+theme_override_constants/separation = 8
 
-[connection signal="pressed" from="VBoxContainer/Initialize" to="." method="_on_initialize_pressed"]
-[connection signal="pressed" from="VBoxContainer/TrackEvent" to="." method="_on_track_event_pressed"]
-[connection signal="pressed" from="VBoxContainer/TrackRevenue" to="." method="_on_track_revenue_pressed"]
-[connection signal="pressed" from="VBoxContainer/ForgetMe" to="." method="_on_forget_me_pressed"]
-[connection signal="pressed" from="VBoxContainer/RequestATT" to="." method="_on_request_att_pressed"]
-[connection signal="pressed" from="VBoxContainer/GetAttribution" to="." method="_on_get_attribution_pressed"]
-[connection signal="pressed" from="VBoxContainer/TrackAdRevenue" to="." method="_on_track_ad_revenue_pressed"]
-[connection signal="pressed" from="VBoxContainer/ConsentTrue" to="." method="_on_consent_true_pressed"]
-[connection signal="pressed" from="VBoxContainer/ConsentFalse" to="." method="_on_consent_false_pressed"]
-[connection signal="pressed" from="VBoxContainer/TrackSubscription" to="." method="_on_track_subscription_pressed"]
+[node name="SectionSetup" type="Label" parent="SafeArea/Root/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.4, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "SETUP"
+
+[node name="Initialize" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Initialize SDK"
+
+[node name="RequestATT" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Request ATT (iOS)"
+
+[node name="SectionEvents" type="Label" parent="SafeArea/Root/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.4, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "EVENTS & REVENUE"
+
+[node name="TrackEvent" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Track Event"
+
+[node name="TrackRevenue" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Track Revenue (0.99 USD)"
+
+[node name="TrackAdRevenue" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Track Ad Revenue (0.45 USD)"
+
+[node name="SectionSubscription" type="Label" parent="SafeArea/Root/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.4, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "SUBSCRIPTION"
+
+[node name="TrackSubscription" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Track Subscription (test)"
+
+[node name="SectionAttribution" type="Label" parent="SafeArea/Root/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.4, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "ATTRIBUTION"
+
+[node name="GetAttribution" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Get Attribution"
+
+[node name="SectionPrivacy" type="Label" parent="SafeArea/Root/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.4, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "PRIVACY & CONSENT"
+
+[node name="ConsentTrue" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Measurement Consent: ON"
+
+[node name="ConsentFalse" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Measurement Consent: OFF"
+
+[node name="ForgetMe" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_type_variation = &"DangerButton"
+theme_override_font_sizes/font_size = 24
+text = "GDPR Forget Me"
+
+[node name="LogHeader" type="HBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LogTitle" type="Label" parent="SafeArea/Root/LogHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Log"
+vertical_alignment = 1
+
+[node name="ClearLog" type="Button" parent="SafeArea/Root/LogHeader"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Clear"
+
+[node name="OutputPanel" type="RichTextLabel" parent="SafeArea/Root"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 18
+scroll_following = true
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
+title = "GDPR Forget Me"
+initial_position = 2
+size = Vector2i(420, 140)
+ok_button_text = "Forget Me"
+dialog_text = "Calling GDPR Forget Me permanently opts out this device. This cannot be undone. Are you sure?"
+
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/Initialize" to="." method="_on_initialize_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/RequestATT" to="." method="_on_request_att_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/TrackEvent" to="." method="_on_track_event_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/TrackRevenue" to="." method="_on_track_revenue_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/TrackAdRevenue" to="." method="_on_track_ad_revenue_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/TrackSubscription" to="." method="_on_track_subscription_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/GetAttribution" to="." method="_on_get_attribution_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/ConsentTrue" to="." method="_on_consent_true_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/ConsentFalse" to="." method="_on_consent_false_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/ForgetMe" to="." method="_on_forget_me_pressed"]
+[connection signal="pressed" from="SafeArea/Root/LogHeader/ClearLog" to="." method="_on_clear_log_pressed"]
 [connection signal="confirmed" from="ConfirmationDialog" to="." method="_on_forget_me_confirmed"]
-
-
