@@ -1,0 +1,129 @@
+# MIT License
+#
+# Copyright (c) 2026-present Somni Game Studios
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+name: "[CI] Build"
+
+# Compile the Android and iOS plugin binaries on every pull request so that a
+# change that breaks the native build is caught before review/merge. This is a
+# smoke test only: it mirrors the release build steps but does not sign,
+# version, or publish anything. No secrets are required, so it also runs safely
+# on pull requests from forks.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Single source of truth for the build's Godot version. The plugin is pinned to
+# one version (also reflected in the Android `compileOnly` dependency and the
+# iOS header generator), so the jobs reference this variable instead of
+# repeating the literal.
+env:
+  GODOT_VERSION: "4.6.2"
+
+# Only keep the latest run per ref; cancel superseded runs to save minutes.
+concurrency:
+  group: ci-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('platforms/android/**/*.gradle', 'platforms/android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build Android AARs
+        working-directory: platforms/android
+        run: |
+          chmod +x gradlew
+          ./gradlew build -PgodotVersion="$GODOT_VERSION"
+          ./gradlew exportFiles -PpluginExportPath=../../platforms/godot_editor/addons/adjust/android/bin
+
+      - name: Upload Android binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-binaries
+          path: platforms/godot_editor/addons/adjust/android/bin/
+          if-no-files-found: error
+          retention-days: 3
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install SCons
+        run: python3 -m pip install scons
+
+      # The generated Godot headers (gitignored) are the slow part of the build;
+      # cache them per generator script so reruns skip the download + scons
+      # header generation. The generator pins Godot 4.6.2 internally.
+      - name: Cache Godot headers
+        uses: actions/cache@v4
+        with:
+          path: platforms/ios/include
+          key: godot-headers-${{ env.GODOT_VERSION }}-${{ hashFiles('platforms/ios/scripts/download_and_generate_headers.sh') }}
+
+      - name: Generate Godot headers
+        working-directory: platforms/ios
+        run: |
+          if [ ! -d include/godot ]; then
+            chmod +x scripts/download_and_generate_headers.sh
+            ./scripts/download_and_generate_headers.sh
+          else
+            echo "Godot headers restored from cache; skipping generation."
+          fi
+
+      - name: Build iOS XCFramework
+        working-directory: platforms/ios
+        run: ./scripts/build.sh "$GODOT_VERSION"
+
+      - name: Upload iOS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-binaries
+          path: platforms/godot_editor/ios/plugins/adjust/
+          if-no-files-found: error
+          retention-days: 3
