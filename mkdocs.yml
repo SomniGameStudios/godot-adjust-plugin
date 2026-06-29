@@ -56,6 +56,7 @@ nav:
   - Introduction: index.md
   - API Reference: gdscript_api.md
   - Testing Guide: testing.md
+  - Android: android.md
 
 copyright: |
   &copy; 2026-present <a href="https://github.com/SomniGameStudios" target="_blank" rel="noopener">Somni Game Studios</a>
