@@ -45,6 +45,9 @@ platforms/godot_editor/ios/plugins/
 # Local credentials
 *credentials.json
 
+# Local export config (copy from export_presets.cfg.example; real signing values stay local)
+platforms/godot_editor/export_presets.cfg
+
 # Documentation build output
 site/
 .cache/

@@ -47,13 +47,14 @@ The demo in `platforms/godot_editor` exercises every plugin API (initialize, eve
 
    Fill in your app token and event token; they load automatically on startup (`is_sandbox` defaults to `true`).
 
-2. `export_presets.cfg` is committed with placeholder signing values and the plugin already enabled — keep `plugins/AdjustGodotPlugin=true` (iOS) and `Use Gradle Build` (Android) so the native plugin is bundled. Before exporting, tell git to ignore your local edits to it, then set your Apple **Team ID** and **bundle identifier** in Godot:
+2. `export_presets.cfg` is gitignored, so your real signing values are never committed. Copy the committed template, which already has the plugin enabled — keep `plugins/AdjustGodotPlugin=true` (iOS) and `Use Gradle Build` (Android) so the native plugin is bundled:
 
    ```bash
-   git update-index --skip-worktree platforms/godot_editor/export_presets.cfg
+   cd platforms/godot_editor
+   cp export_presets.cfg.example export_presets.cfg
    ```
 
-   This keeps the shared placeholder in the repo while your real signing values stay local (undo with `--no-skip-worktree`).
+   Then set your Apple **Team ID** and **bundle identifier** in Godot before exporting.
 
 Then follow the per-platform steps below to build onto a device.
 
