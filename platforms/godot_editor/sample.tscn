@@ -100,6 +100,11 @@ custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 text = "GDPR Consent: NO"
 
+[node name="TrackSubscription" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "Track Subscription (test)"
+
 [node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 
@@ -123,6 +128,7 @@ autowrap_mode = 3
 [connection signal="pressed" from="VBoxContainer/TrackAdRevenue" to="." method="_on_track_ad_revenue_pressed"]
 [connection signal="pressed" from="VBoxContainer/ConsentTrue" to="." method="_on_consent_true_pressed"]
 [connection signal="pressed" from="VBoxContainer/ConsentFalse" to="." method="_on_consent_false_pressed"]
+[connection signal="pressed" from="VBoxContainer/TrackSubscription" to="." method="_on_track_subscription_pressed"]
 [connection signal="confirmed" from="ConfirmationDialog" to="." method="_on_forget_me_confirmed"]
 
 

@@ -40,11 +40,14 @@ func _get_android_libraries(platform: EditorExportPlatform, debug: bool) -> Pack
 func _get_android_dependencies(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
 	return PackedStringArray([
 		"com.adjust.sdk:adjust-android:5.6.0",
-		"com.android.installreferrer:installreferrer:2.2"
+		"com.adjust.sdk:adjust-android-meta-referrer:5.6.0",
+		"com.android.installreferrer:installreferrer:2.2",
+		"com.google.android.gms:play-services-ads-identifier:18.0.1"
 	])
 
 func _get_android_manifest_element(platform: EditorExportPlatform, debug: bool) -> String:
 	return """
 	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 	"""

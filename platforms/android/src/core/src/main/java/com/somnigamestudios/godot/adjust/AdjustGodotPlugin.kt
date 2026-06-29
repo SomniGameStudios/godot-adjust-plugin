@@ -54,7 +54,7 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun initialize(appToken: String, isSandbox: Boolean, attWaitInterval: Int) {
+    fun initialize(appToken: String, isSandbox: Boolean, attWaitInterval: Int, fbAppId: String) {
         val activity = getActivity()
         if (activity == null) {
             Log.e(TAG, "Activity is null, cannot initialize Adjust")
@@ -65,7 +65,11 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         val config = AdjustConfig(activity, appToken, environment)
 
         config.setLogLevel(if (isSandbox) LogLevel.VERBOSE else LogLevel.INFO)
-        
+
+        if (fbAppId.isNotEmpty()) {
+            config.fbAppId = fbAppId
+        }
+
         cachedUrls?.let { urls ->
             config.setUrlStrategy(urls.toList(), cachedUseSubdomains, cachedIsDataResidency)
         }
