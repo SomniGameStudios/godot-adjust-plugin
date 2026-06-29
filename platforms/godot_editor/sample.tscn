@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://sample_scene"]
+[gd_scene load_steps=5 format=3 uid="uid://sample_scene"]
 
 [ext_resource type="Script" path="res://sample.gd" id="1_script"]
 [ext_resource type="Script" path="res://safe_area_container.gd" id="2_safe"]
 [ext_resource type="Theme" path="res://theme.tres" id="3_theme"]
+[ext_resource type="Script" path="res://scroll_container.gd" id="4_scroll"]
 
 [node name="Sample" type="Control"]
 layout_mode = 3
@@ -57,6 +58,7 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+script = ExtResource("4_scroll")
 
 [node name="Actions" type="VBoxContainer" parent="SafeArea/Root/Scroll"]
 layout_mode = 2

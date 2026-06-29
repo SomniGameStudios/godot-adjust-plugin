@@ -36,16 +36,18 @@ See `AGENTS.md` for architectural details and coding standards.
 
 ## Demo Project Setup
 
-The demo in `platforms/godot_editor` exercises every plugin API (initialize, events, revenue, ad revenue, subscription, ATT, measurement consent, attribution, and GDPR forget-me). Two config files are gitignored so your real values are never committed — copy the templates once and fill them in:
+The demo in `platforms/godot_editor` exercises every plugin API (initialize, events, revenue, ad revenue, subscription, ATT, measurement consent, attribution, and GDPR forget-me).
 
-```bash
-cd platforms/godot_editor
-cp test_credentials.json.example test_credentials.json   # Adjust sandbox tokens
-cp export_presets.cfg.example export_presets.cfg          # iOS signing placeholder
-```
+1. Provide your Adjust **sandbox** tokens (gitignored, so they are never committed):
 
-- **`test_credentials.json`** — your Adjust **sandbox** app token and event token. They are loaded automatically on startup; `is_sandbox` defaults to `true`.
-- **`export_presets.cfg`** (iOS) — set your Apple **Team ID** and **bundle identifier**. Keep `plugins/AdjustGodotPlugin=true` so the native plugin is bundled into the build.
+   ```bash
+   cd platforms/godot_editor
+   cp test_credentials.json.example test_credentials.json
+   ```
+
+   Fill in your app token and event token; they load automatically on startup (`is_sandbox` defaults to `true`).
+
+2. Open `export_presets.cfg` in Godot and set your Apple **Team ID** and **bundle identifier** before exporting. The committed preset ships with placeholders (empty Team ID, `com.example.adjustdemo`) and the plugin already enabled — keep `plugins/AdjustGodotPlugin=true` (iOS) and `Use Gradle Build` (Android) so the native plugin is bundled.
 
 Then follow the per-platform steps below to build onto a device.
 
