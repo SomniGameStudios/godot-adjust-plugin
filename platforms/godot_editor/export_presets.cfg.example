@@ -1,0 +1,61 @@
+; Placeholder iOS export preset for the Adjust plugin demo project.
+;
+; The working export_presets.cfg is gitignored so real signing values never get
+; committed. To run the demo on a device:
+;   1. cp export_presets.cfg.example export_presets.cfg
+;   2. Open the project in Godot and set your own Apple Team ID + bundle id.
+;   3. Export / build through Xcode onto a real device.
+;
+; The one value that must stay set is plugins/AdjustGodotPlugin=true — that is
+; what bundles the native Adjust plugin into the iOS build.
+
+[preset.0]
+
+name="iOS"
+platform="iOS"
+runnable=false
+dedicated_server=false
+custom_features=""
+export_filter="all_resources"
+include_filter=""
+exclude_filter=""
+export_path="ios/build/adjust-demo.xcodeproj"
+encryption_include_filters=""
+encryption_exclude_filters=""
+seed=0
+encrypt_pck=false
+encrypt_directory=false
+script_export_mode=2
+
+[preset.0.options]
+
+custom_template/debug=""
+custom_template/release=""
+architectures/arm64=true
+
+; --- Signing: fill these with your own values locally ---
+application/app_store_team_id=""
+application/code_sign_identity_debug="Apple Development"
+application/code_sign_identity_release="Apple Development"
+application/provisioning_profile_specifier_debug=""
+application/provisioning_profile_specifier_release=""
+application/export_method_debug=1
+application/export_method_release=0
+application/bundle_identifier="com.example.adjustdemo"
+application/signature=""
+application/short_version="1.0"
+application/version="1.0.0"
+
+; ATT prompt reason shown by request_tracking_authorization() on iOS.
+application/additional_plist_content="<key>NSUserTrackingUsageDescription</key>
+<string>This identifier will be used to measure advertising attribution.</string>"
+application/export_project_only=true
+application/min_ios_version="13.0"
+application/targeted_device_family=3
+
+; --- Required: bundle the native Adjust plugin into the build ---
+plugins/AdjustGodotPlugin=true
+
+; Adjust reads the IDFA, so tracking must be enabled in the privacy settings.
+privacy/tracking_enabled=true
+privacy/tracking_domains=PackedStringArray()
