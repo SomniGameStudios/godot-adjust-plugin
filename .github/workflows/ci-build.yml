@@ -27,15 +27,18 @@ name: "[CI] Build"
 # smoke test only: it mirrors the release build steps but does not sign,
 # version, or publish anything. No secrets are required, so it also runs safely
 # on pull requests from forks.
-#
-# Godot 4.6.2 is pinned across the whole build (AGENTS.md, the Android
-# `compileOnly` dependency, and the iOS header generation), so the CI builds
-# against that single version to match the release workflow.
 
 on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+# Single source of truth for the build's Godot version. The plugin is pinned to
+# one version (also reflected in the Android `compileOnly` dependency and the
+# iOS header generator), so the jobs reference this variable instead of
+# repeating the literal.
+env:
+  GODOT_VERSION: "4.6.2"
 
 # Only keep the latest run per ref; cancel superseded runs to save minutes.
 concurrency:
@@ -69,7 +72,7 @@ jobs:
         working-directory: platforms/android
         run: |
           chmod +x gradlew
-          ./gradlew build -PgodotVersion=4.6.2
+          ./gradlew build -PgodotVersion="$GODOT_VERSION"
           ./gradlew exportFiles -PpluginExportPath=../../platforms/godot_editor/addons/adjust/android/bin
 
       - name: Upload Android binaries
@@ -101,7 +104,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: platforms/ios/include
-          key: godot-headers-4.6.2-${{ hashFiles('platforms/ios/scripts/download_and_generate_headers.sh') }}
+          key: godot-headers-${{ env.GODOT_VERSION }}-${{ hashFiles('platforms/ios/scripts/download_and_generate_headers.sh') }}
 
       - name: Generate Godot headers
         working-directory: platforms/ios
@@ -115,7 +118,7 @@ jobs:
 
       - name: Build iOS XCFramework
         working-directory: platforms/ios
-        run: ./scripts/build.sh 4.6.2
+        run: ./scripts/build.sh "$GODOT_VERSION"
 
       - name: Upload iOS binaries
         uses: actions/upload-artifact@v4
