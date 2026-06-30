@@ -21,9 +21,40 @@ Welcome to the documentation for the **Godot Adjust Plugin**. This addon provide
 
 ---
 
-## Quick Start (GDScript)
+## Quick Start (recommended): Project Settings + autoload
 
-To start tracking installs and events, use the static methods and callbacks on the `AdjustPlugin` class:
+When the plugin is enabled it registers an **`Adjust`** autoload and a set of
+**Project Settings** under *Project > Project Settings > Adjust*:
+
+| Setting | Meaning |
+| --- | --- |
+| `adjust/config/app_token` | Your Adjust app token. |
+| `adjust/config/fb_app_id` | Optional Meta App ID (Android Meta Install Referrer). |
+| `adjust/config/att_wait_interval` | *(iOS only)* ATT consent wait, `0`–`360` seconds. |
+| `adjust/config/environment` | `Auto` (debug build → sandbox), `Sandbox`, or `Production`. |
+| `adjust/config/auto_initialize` | Initialize the SDK on boot from these settings. |
+
+Set your token, enable `auto_initialize`, and the SDK starts itself — no init
+code required. Then use the `Adjust` singleton anywhere:
+
+```gdscript
+func _ready() -> void:
+    Adjust.initialization_completed.connect(_on_adjust_init_completed)
+    Adjust.attribution_changed.connect(_on_adjust_attribution_changed)
+
+func _on_adjust_init_completed() -> void:
+    Adjust.track_event("your_event_token")
+```
+
+Leave `auto_initialize` **off** if you need to run anything before init — a
+consent prompt, or pre-init configuration such as `Adjust.set_url_strategy(...)`
+for EU data residency, which must be called *before* `initialize`. In that case
+call `Adjust.initialize(...)` yourself once the pre-init step is done.
+
+## Quick Start (manual): static API
+
+Alternatively, skip the autoload and drive the static `AdjustPlugin` class
+directly. Use this **or** the autoload for callbacks, not both.
 
 ```gdscript
 extends Node
