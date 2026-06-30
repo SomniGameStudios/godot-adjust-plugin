@@ -1,6 +1,6 @@
 # Godot Adjust Plugin
 
-Welcome to the documentation for the **Godot Adjust Plugin**. This addon provides a lightweight and robust GDScript bridge to the native **Adjust SDK v5.6.0** for both iOS and Android.
+Welcome to the documentation for the **Godot Adjust Plugin**. This addon provides a lightweight and robust GDScript bridge to the native **Adjust SDK v5.7.0** for both iOS and Android.
 
 ## Features
 
@@ -35,7 +35,8 @@ func _ready() -> void:
     
     # 2. Initialize with your App Token
     var app_token := "your_app_token"
-    var is_sandbox := true # Set to false for Production
+    # Debug/editor builds -> sandbox; exported release builds -> production.
+    var is_sandbox := OS.is_debug_build()
     AdjustPlugin.initialize(app_token, is_sandbox)
 
 func _on_adjust_init_completed() -> void:

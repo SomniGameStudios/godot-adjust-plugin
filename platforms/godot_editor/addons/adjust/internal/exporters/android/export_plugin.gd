@@ -39,8 +39,8 @@ func _get_android_libraries(platform: EditorExportPlatform, debug: bool) -> Pack
 
 func _get_android_dependencies(platform: EditorExportPlatform, debug: bool) -> PackedStringArray:
 	return PackedStringArray([
-		"com.adjust.sdk:adjust-android:5.6.0",
-		"com.adjust.sdk:adjust-android-meta-referrer:5.6.0",
+		"com.adjust.sdk:adjust-android:5.7.0",
+		"com.adjust.sdk:adjust-android-meta-referrer:5.7.0",
 		"com.android.installreferrer:installreferrer:2.2",
 		"com.google.android.gms:play-services-ads-identifier:18.0.1"
 	])

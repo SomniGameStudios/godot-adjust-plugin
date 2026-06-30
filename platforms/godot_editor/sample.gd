@@ -32,7 +32,7 @@ const COLOR_WARN := Color(0.84, 0.5, 0.1)
 # demo running in-editor without real tokens.
 var app_token := "your_app_token"
 var event_token := "your_event_token"
-var is_sandbox := true
+var is_sandbox := OS.is_debug_build()
 var fb_app_id := ""
 
 @onready var status_label: Label = %StatusLabel
