@@ -2,6 +2,12 @@
 
 This page describes the API reference for the `AdjustPlugin` class.
 
+The plugin also registers an **`Adjust`** autoload that mirrors every method
+below as an instance method (e.g. `Adjust.track_event(...)`) and exposes
+`initialization_completed` / `attribution_changed` as **signals**. It can
+auto-initialize from Project Settings — see *Quick Start* on the home page. Use
+the autoload **or** the static `AdjustPlugin` class for callbacks, not both.
+
 ## Callbacks
 
 ### `initialization_completed`
@@ -35,7 +41,7 @@ static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: i
 ```
 * **`app_token`**: Your Adjust app token from the dashboard.
 * **`is_sandbox`**: Set to `true` for testing/sandbox mode. Set to `false` for production builds.
-* **`att_wait_interval`**: *(iOS only)* The time (in seconds) the SDK waits for the user to approve App Tracking Transparency (ATT) dialog before sending install data. Default: `30` seconds.
+* **`att_wait_interval`**: *(iOS only)* The time (in seconds, `0`–`360`) the SDK waits for the user to respond to the App Tracking Transparency (ATT) dialog before sending install data, improving IDFA attribution. Maps to iOS `ADJConfig.attConsentWaitingInterval`. Ignored on Android (no ATT). Default: `30` seconds.
 * **`fb_app_id`**: *(optional)* The Facebook App ID. Provide it to enable the Meta partner integration (Meta Install Referrer on Android). Leave empty to disable. Default: `""`.
 
 ---
