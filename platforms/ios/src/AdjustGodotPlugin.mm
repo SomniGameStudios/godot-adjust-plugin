@@ -135,7 +135,7 @@ void AdjustGodotPlugin::initialize(String p_app_token, bool p_is_sandbox, int p_
         return;
     }
 
-    [config setLogLevel:p_is_sandbox ? ADJLogLevelVerbose : ADJLogLevelInfo];
+    [config setLogLevel:p_is_sandbox ? ADJLogLevelVerbose : ADJLogLevelWarn];
     [config setAttConsentWaitingInterval:(NSUInteger)p_att_wait_interval];
     [config setDelegate:[AdjustGodotDelegate sharedInstance]];
 

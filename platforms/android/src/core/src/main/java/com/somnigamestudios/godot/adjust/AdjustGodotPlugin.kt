@@ -64,7 +64,7 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         val environment = if (isSandbox) AdjustConfig.ENVIRONMENT_SANDBOX else AdjustConfig.ENVIRONMENT_PRODUCTION
         val config = AdjustConfig(activity, appToken, environment)
 
-        config.setLogLevel(if (isSandbox) LogLevel.VERBOSE else LogLevel.INFO)
+        config.setLogLevel(if (isSandbox) LogLevel.VERBOSE else LogLevel.WARN)
 
         if (fbAppId.isNotEmpty()) {
             config.fbAppId = fbAppId

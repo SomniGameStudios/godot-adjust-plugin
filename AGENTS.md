@@ -13,7 +13,7 @@ This file is the authoritative source of truth for ALL AI agents (Gemini, Claude
 
 ## 📦 Current Environment
 - **Godot Version:** 4.6.2 (Current target for builds and testing).
-- **Adjust SDK:** v5.6.0.
+- **Adjust SDK:** v5.7.0.
 
 ## 🛠️ Critical Commands
 - **Build All/Specific Platforms:** Use the central script for all compilation needs. 

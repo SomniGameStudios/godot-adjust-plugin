@@ -1,6 +1,6 @@
 # <img src="platforms/godot_editor/icon.svg" width="36" valign="middle"> Godot Adjust Plugin
 
-A lightweight and high-performance native wrapper for the **Adjust SDK v5.6.0** on Android and iOS, built specifically for Godot Engine.
+A lightweight and high-performance native wrapper for the **Adjust SDK v5.7.0** on Android and iOS, built specifically for Godot Engine.
 
 👉 **[Read the Documentation](https://somnigamestudios.github.io/godot-adjust-plugin/)** | **[Class API Reference](https://somnigamestudios.github.io/godot-adjust-plugin/gdscript_api/)**
 
