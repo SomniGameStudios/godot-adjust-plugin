@@ -1,60 +1,36 @@
 name: "[CD] Deploy Documentation"
+
 on:
   push:
     branches:
       - main
-    tags:
-      - '*'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0 
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
-      - uses: actions/cache@v5
+      - run: pip install mkdocs-material pillow cairosvg
+      - run: mkdocs build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
-          key: ${{ github.ref }}
-          path: .cache
-      - run: pip install mkdocs-material pillow cairosvg mike
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Deploy documentation
-        run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            # Extract the version (e.g., 1.0)
-            VERSION=$(grep "version=" platforms/godot_editor/addons/adjust/plugin.cfg | cut -d'"' -f2 | sed 's/^v//' | cut -d. -f1,2)
-            
-            # Deploy versioned and stable as distinct menu entries
-            mike deploy --push --update-aliases $VERSION
-            mike deploy --push --update-aliases stable
-            
-            mike set-default --push stable
-          else
-            # Define the warning message for the 'latest' version.
-            echo "  announcement: |" > announcement.yml
-            echo "    <div class='announcement-bg-shapes'>" >> announcement.yml
-            echo "      <div class='shape shape-1'>⚠️</div>" >> announcement.yml
-            echo "      <div class='shape shape-2'>⚠️</div>" >> announcement.yml
-            echo "      <div class='shape shape-3'>⚠️</div>" >> announcement.yml
-            echo "    </div>" >> announcement.yml
-            echo "    <span class='announcement-title'>⚠️ EXPERIMENTAL DOCUMENTATION</span>" >> announcement.yml
-            echo "    <div class='announcement-text'>" >> announcement.yml
-            echo "      You are viewing the <a href='https://github.com/SomniGameStudios/godot-adjust-plugin/tree/main' class='announcement-badge'>Main Branch</a> (latest).<br>" >> announcement.yml
-            echo "      For stable releases, please see the <a href='https://somnigamestudios.github.io/godot-adjust-plugin/stable/' class='announcement-link'>stable version</a>." >> announcement.yml
-            echo "    </div>" >> announcement.yml
-
-            # Inject the announcement right after the 'extra:' tag in mkdocs.yml
-            sed -i '/extra:/r announcement.yml' mkdocs.yml
-            
-            mike deploy --push --update-aliases latest
-          fi
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment
