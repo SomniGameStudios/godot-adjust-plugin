@@ -106,7 +106,7 @@ xcodebuild -resolvePackageDependencies \\
 
 
 func _generate_package_swift(export_dir: String) -> void:
-	var source_dir := export_dir.path_join("SomniAdjustDeps")
+	var source_dir := export_dir.path_join("AdjustDeps")
 	if not DirAccess.dir_exists_absolute(source_dir):
 		DirAccess.make_dir_recursive_absolute(source_dir)
 
@@ -114,19 +114,19 @@ func _generate_package_swift(export_dir: String) -> void:
 import PackageDescription
 
 let package = Package(
-    name: "SomniAdjustDeps",
+    name: "AdjustDeps",
     platforms: [.iOS(.v13)],
     products: [
         .library(
-            name: "SomniAdjustDeps",
-            targets: ["SomniAdjustDeps"]),
+            name: "AdjustDeps",
+            targets: ["AdjustDeps"]),
     ],
     dependencies: [
         .package(url: "https://github.com/adjust/ios_sdk", exact: "5.7.0"),
     ],
     targets: [
         .target(
-            name: "SomniAdjustDeps",
+            name: "AdjustDeps",
             dependencies: [
                 .product(name: "AdjustSdk", package: "ios_sdk"),
             ],
@@ -142,14 +142,14 @@ let package = Package(
 
 
 func _generate_dummy_source(export_dir: String) -> void:
-	var source_dir := export_dir.path_join("SomniAdjustDeps")
+	var source_dir := export_dir.path_join("AdjustDeps")
 	if not DirAccess.dir_exists_absolute(source_dir):
 		DirAccess.make_dir_recursive_absolute(source_dir)
 
 	var content := (
 		"// Dummy\n"
 		+ "import Foundation\n\n"
-		+ "public struct SomniAdjustDeps {\n"
+		+ "public struct AdjustDeps {\n"
 		+ "    public init() {}\n"
 		+ "}\n"
 	)
