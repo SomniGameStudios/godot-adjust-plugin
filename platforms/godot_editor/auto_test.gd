@@ -126,7 +126,7 @@ func _run_e2e(label: String, init_action: Callable) -> void:
 	})
 	_log("e2e", "tracked enriched event (revenue + dedup + partner param)")
 	await _delay(0.5)
-	AdjustPlugin.track_third_party_sharing(true, {"google_dma": {"eea": "1", "ad_personalization": "1"}})
+	AdjustPlugin.track_third_party_sharing(true, {"google_dma": {"eea": "1", "ad_user_data": "1", "ad_personalization": "1"}})
 	_log("e2e", "third-party sharing: enabled + google_dma granular")
 	await _delay(2.0)
 	_log("e2e", "attribution (after events): %s" % str(AdjustPlugin.get_attribution()))

@@ -114,7 +114,7 @@ Records the user's third-party data-sharing preference, with optional per-partne
 static func track_third_party_sharing(enabled: bool, granular_options := {}) -> void
 ```
 * **`enabled`**: `true` to allow third-party sharing, `false` to disable.
-* **`granular_options`** *(optional Dictionary)*: maps a partner name to a Dictionary of key/value options, e.g. `{"google_dma": {"eea": "1", "ad_personalization": "1"}}`.
+* **`granular_options`** *(optional Dictionary)*: maps a partner name to a Dictionary of key/value options. For Google DMA the `google_dma` partner requires `eea` and `ad_user_data` (and optionally `ad_personalization`), e.g. `{"google_dma": {"eea": "1", "ad_user_data": "1", "ad_personalization": "1"}}`.
 
 ---
 

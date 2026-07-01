@@ -99,8 +99,8 @@ static func track_app_store_subscription(price: String, currency: String, transa
 		_plugin.track_app_store_subscription(price, currency, transaction_id)
 
 ## Records third-party data-sharing preference. `granular_options` maps a
-## partner name to a Dictionary of key/value options, e.g.
-## {"google_dma": {"eea": "1", "ad_personalization": "1"}} for Google DMA / Meta.
+## partner name to a Dictionary of key/value options, e.g. for Google DMA:
+## {"google_dma": {"eea": "1", "ad_user_data": "1", "ad_personalization": "1"}}.
 static func track_third_party_sharing(enabled: bool, granular_options := {}) -> void:
 	if _plugin_has("track_third_party_sharing"):
 		_plugin.track_third_party_sharing(enabled, granular_options)
