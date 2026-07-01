@@ -50,11 +50,6 @@ func _ready() -> void:
 
 	AdjustPlugin.initialization_completed = _on_adjust_init_completed
 	AdjustPlugin.attribution_changed = _on_adjust_attribution_changed
-	AdjustPlugin.adid_received = _on_adid_received
-	AdjustPlugin.google_ad_id_received = _on_google_ad_id_received
-	AdjustPlugin.idfa_received = _on_idfa_received
-	AdjustPlugin.sdk_version_received = _on_sdk_version_received
-	AdjustPlugin.is_enabled_received = _on_is_enabled_received
 
 func _load_credentials() -> void:
 	var path := "res://test_credentials.json"
@@ -133,19 +128,6 @@ func _run_e2e(label: String, init_action: Callable) -> void:
 	await _delay(0.5)
 	AdjustPlugin.track_third_party_sharing(true, {"google_dma": {"eea": "1", "ad_personalization": "1"}})
 	_log("e2e", "third-party sharing: enabled + google_dma granular")
-	await _delay(0.5)
-	AdjustPlugin.set_offline_mode(true)
-	AdjustPlugin.set_offline_mode(false)
-	_log("e2e", "offline mode toggled on/off")
-	await _delay(0.5)
-	AdjustPlugin.request_sdk_version()
-	AdjustPlugin.request_adid()
-	AdjustPlugin.request_is_enabled()
-	if OS.get_name() == "iOS":
-		AdjustPlugin.request_idfa()
-	else:
-		AdjustPlugin.request_google_ad_id()
-	_log("e2e", "requested sdk_version / adid / is_enabled / platform ad id (async)")
 	await _delay(2.0)
 	_log("e2e", "attribution (after events): %s" % str(AdjustPlugin.get_attribution()))
 	_log("e2e", "===== E2E END (%s): OK =====" % label)
@@ -172,21 +154,6 @@ func _on_adjust_init_completed() -> void:
 
 func _on_adjust_attribution_changed(data: Dictionary) -> void:
 	_log("attribution", "Attribution changed: %s" % str(data))
-
-func _on_adid_received(adid: String) -> void:
-	_log("adid", adid)
-
-func _on_google_ad_id_received(google_ad_id: String) -> void:
-	_log("google_ad_id", google_ad_id)
-
-func _on_idfa_received(idfa: String) -> void:
-	_log("idfa", idfa)
-
-func _on_sdk_version_received(sdk_version: String) -> void:
-	_log("sdk_version", sdk_version)
-
-func _on_is_enabled_received(enabled: bool) -> void:
-	_log("is_enabled", str(enabled))
 
 # --- UI helpers ---
 

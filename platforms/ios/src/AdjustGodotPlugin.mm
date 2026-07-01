@@ -55,21 +55,9 @@ protected:
         ClassDB::bind_method(D_METHOD("get_attribution"), &AdjustGodotPlugin::get_attribution);
         ClassDB::bind_method(D_METHOD("track_measurement_consent", "enabled"), &AdjustGodotPlugin::track_measurement_consent);
         ClassDB::bind_method(D_METHOD("track_ad_revenue", "source", "revenue", "currency"), &AdjustGodotPlugin::track_ad_revenue);
-        ClassDB::bind_method(D_METHOD("set_offline_mode", "offline"), &AdjustGodotPlugin::set_offline_mode);
-        ClassDB::bind_method(D_METHOD("enable_sdk"), &AdjustGodotPlugin::enable_sdk);
-        ClassDB::bind_method(D_METHOD("disable_sdk"), &AdjustGodotPlugin::disable_sdk);
-        ClassDB::bind_method(D_METHOD("request_adid"), &AdjustGodotPlugin::request_adid);
-        ClassDB::bind_method(D_METHOD("request_idfa"), &AdjustGodotPlugin::request_idfa);
-        ClassDB::bind_method(D_METHOD("request_sdk_version"), &AdjustGodotPlugin::request_sdk_version);
-        ClassDB::bind_method(D_METHOD("request_is_enabled"), &AdjustGodotPlugin::request_is_enabled);
 
         ADD_SIGNAL(MethodInfo("attribution_changed", PropertyInfo(Variant::DICTIONARY, "data")));
         ADD_SIGNAL(MethodInfo("initialization_completed"));
-        ADD_SIGNAL(MethodInfo("adid_received", PropertyInfo(Variant::STRING, "adid")));
-        ADD_SIGNAL(MethodInfo("google_ad_id_received", PropertyInfo(Variant::STRING, "google_ad_id")));
-        ADD_SIGNAL(MethodInfo("idfa_received", PropertyInfo(Variant::STRING, "idfa")));
-        ADD_SIGNAL(MethodInfo("sdk_version_received", PropertyInfo(Variant::STRING, "sdk_version")));
-        ADD_SIGNAL(MethodInfo("is_enabled_received", PropertyInfo(Variant::BOOL, "enabled")));
     }
 
 public:
@@ -85,13 +73,6 @@ public:
     Dictionary get_attribution();
     void track_measurement_consent(bool p_enabled);
     void track_ad_revenue(String p_source, double p_revenue, String p_currency);
-    void set_offline_mode(bool p_offline);
-    void enable_sdk();
-    void disable_sdk();
-    void request_adid();
-    void request_idfa();
-    void request_sdk_version();
-    void request_is_enabled();
 
     static AdjustGodotPlugin *get_singleton() {
         return instance;
@@ -302,62 +283,6 @@ void AdjustGodotPlugin::track_ad_revenue(String p_source, double p_revenue, Stri
         [adRevenue setRevenue:p_revenue currency:currencyStr];
         [Adjust trackAdRevenue:adRevenue];
     }
-}
-
-void AdjustGodotPlugin::set_offline_mode(bool p_offline) {
-    if (p_offline) {
-        [Adjust switchToOfflineMode];
-    } else {
-        [Adjust switchBackToOnlineMode];
-    }
-}
-
-void AdjustGodotPlugin::enable_sdk() {
-    [Adjust enable];
-}
-
-void AdjustGodotPlugin::disable_sdk() {
-    [Adjust disable];
-}
-
-static void emit_string_signal_on_main(const char *signal_name, NSString *value) {
-    String data = value ? String::utf8([value UTF8String]) : "";
-    dispatch_async(dispatch_get_main_queue(), ^{
-        AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
-        if (plugin) {
-            plugin->emit_signal(signal_name, data);
-        }
-    });
-}
-
-void AdjustGodotPlugin::request_adid() {
-    [Adjust adidWithCompletionHandler:^(NSString * _Nullable adid) {
-        emit_string_signal_on_main("adid_received", adid);
-    }];
-}
-
-void AdjustGodotPlugin::request_idfa() {
-    [Adjust idfaWithCompletionHandler:^(NSString * _Nullable idfa) {
-        emit_string_signal_on_main("idfa_received", idfa);
-    }];
-}
-
-void AdjustGodotPlugin::request_sdk_version() {
-    [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
-        emit_string_signal_on_main("sdk_version_received", sdkVersion);
-    }];
-}
-
-void AdjustGodotPlugin::request_is_enabled() {
-    [Adjust isEnabledWithCompletionHandler:^(BOOL isEnabled) {
-        bool value = isEnabled;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
-            if (plugin) {
-                plugin->emit_signal("is_enabled_received", value);
-            }
-        });
-    }];
 }
 
 // Godot entry points

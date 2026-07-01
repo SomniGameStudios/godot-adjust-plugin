@@ -51,11 +51,6 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         val signals = mutableSetOf<SignalInfo>()
         signals.add(SignalInfo("attribution_changed", Dictionary::class.java))
         signals.add(SignalInfo("initialization_completed"))
-        signals.add(SignalInfo("adid_received", String::class.java))
-        signals.add(SignalInfo("google_ad_id_received", String::class.java))
-        signals.add(SignalInfo("idfa_received", String::class.java))
-        signals.add(SignalInfo("sdk_version_received", String::class.java))
-        signals.add(SignalInfo("is_enabled_received", Boolean::class.javaObjectType))
         return signals
     }
 
@@ -181,42 +176,5 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         val adRevenue = AdjustAdRevenue(source)
         adRevenue.setRevenue(revenue, currency)
         Adjust.trackAdRevenue(adRevenue)
-    }
-
-    @UsedByGodot
-    fun set_offline_mode(offline: Boolean) {
-        if (offline) Adjust.switchToOfflineMode() else Adjust.switchBackToOnlineMode()
-    }
-
-    @UsedByGodot
-    fun enable_sdk() {
-        Adjust.enable()
-    }
-
-    @UsedByGodot
-    fun disable_sdk() {
-        Adjust.disable()
-    }
-
-    @UsedByGodot
-    fun request_adid() {
-        Adjust.getAdid { adid -> emitSignal("adid_received", adid ?: "") }
-    }
-
-    @UsedByGodot
-    fun request_google_ad_id() {
-        val activity = getActivity() ?: return
-        Adjust.getGoogleAdId(activity) { googleAdId -> emitSignal("google_ad_id_received", googleAdId ?: "") }
-    }
-
-    @UsedByGodot
-    fun request_sdk_version() {
-        Adjust.getSdkVersion { version -> emitSignal("sdk_version_received", version ?: "") }
-    }
-
-    @UsedByGodot
-    fun request_is_enabled() {
-        val activity = getActivity() ?: return
-        Adjust.isEnabled(activity) { enabled -> emitSignal("is_enabled_received", enabled) }
     }
 }
