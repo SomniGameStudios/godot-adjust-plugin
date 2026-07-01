@@ -30,10 +30,18 @@ static var _plugin := MobileSingletonPlugin._get_plugin("AdjustGodotPlugin")
 static var attribution_changed: Callable
 static var initialization_completed: Callable
 
+## Values for the `adjust/config/environment` Project Setting.
+## AUTO derives the environment from the build type (debug -> sandbox).
+enum EnvironmentMode { AUTO, SANDBOX, PRODUCTION }
+
+const _PREFIX := "adjust/config/"
+
 static func _static_init() -> void:
 	if _plugin:
 		MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
 		MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
+	if bool(_setting("auto_initialize", false)):
+		_auto_initialize()
 
 static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30, fb_app_id: String = "") -> void:
 	if not _plugin:
@@ -96,3 +104,27 @@ static func _on_attribution_changed(data: Dictionary) -> void:
 static func _on_initialization_completed() -> void:
 	if initialization_completed.is_valid():
 		initialization_completed.call()
+
+
+static func _auto_initialize() -> void:
+	var app_token := str(_setting("app_token", ""))
+	if app_token.is_empty():
+		push_warning("Adjust: auto_initialize is enabled but 'adjust/config/app_token' is empty; skipping initialization.")
+		return
+	initialize(app_token, is_sandbox_environment(), int(_setting("att_wait_interval", 30)), str(_setting("fb_app_id", "")))
+
+
+## Resolves whether the SDK should use the sandbox environment, based on the
+## `adjust/config/environment` Project Setting (AUTO uses OS.is_debug_build()).
+static func is_sandbox_environment() -> bool:
+	match int(_setting("environment", EnvironmentMode.AUTO)):
+		EnvironmentMode.SANDBOX:
+			return true
+		EnvironmentMode.PRODUCTION:
+			return false
+		_:
+			return OS.is_debug_build()
+
+
+static func _setting(key: String, default_value: Variant) -> Variant:
+	return ProjectSettings.get_setting(_PREFIX + key, default_value)

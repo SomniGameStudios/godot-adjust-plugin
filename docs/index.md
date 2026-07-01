@@ -21,10 +21,11 @@ Welcome to the documentation for the **Godot Adjust Plugin**. This addon provide
 
 ---
 
-## Quick Start (recommended): Project Settings + autoload
+## Quick Start
 
-When the plugin is enabled it registers an **`Adjust`** autoload and a set of
-**Project Settings** under *Project > Project Settings > Adjust*:
+### Option A: Auto-initialize from Project Settings
+
+Set your token in *Project > Project Settings > Adjust* and enable `auto_initialize`:
 
 | Setting | Meaning |
 | --- | --- |
@@ -34,48 +35,33 @@ When the plugin is enabled it registers an **`Adjust`** autoload and a set of
 | `adjust/config/environment` | `Auto` (debug build → sandbox), `Sandbox`, or `Production`. |
 | `adjust/config/auto_initialize` | Initialize the SDK on boot from these settings. |
 
-Set your token, enable `auto_initialize`, and the SDK starts itself — no init
-code required. Then use the `Adjust` singleton anywhere:
+Then use `AdjustPlugin` anywhere:
 
 ```gdscript
 func _ready() -> void:
-    Adjust.initialization_completed.connect(_on_adjust_init_completed)
-    Adjust.attribution_changed.connect(_on_adjust_attribution_changed)
+    AdjustPlugin.initialization_completed = _on_adjust_init_completed
+    AdjustPlugin.attribution_changed = _on_adjust_attribution_changed
 
 func _on_adjust_init_completed() -> void:
-    Adjust.track_event("your_event_token")
+    AdjustPlugin.track_event("your_event_token")
 ```
 
-Leave `auto_initialize` **off** if you need to run anything before init — a
-consent prompt, or pre-init configuration such as `Adjust.set_url_strategy(...)`
-for EU data residency, which must be called *before* `initialize`. In that case
-call `Adjust.initialize(...)` yourself once the pre-init step is done.
-
-## Quick Start (manual): static API
-
-Alternatively, skip the autoload and drive the static `AdjustPlugin` class
-directly. Use this **or** the autoload for callbacks, not both.
+### Option B: Manual initialization
 
 ```gdscript
 extends Node
 
 func _ready() -> void:
-    # 1. Connect to static callbacks
     AdjustPlugin.initialization_completed = _on_adjust_init_completed
     AdjustPlugin.attribution_changed = _on_adjust_attribution_changed
     
-    # 2. Initialize with your App Token
     var app_token := "your_app_token"
-    # Debug/editor builds -> sandbox; exported release builds -> production.
-    var is_sandbox := OS.is_debug_build()
+    var is_sandbox := AdjustPlugin.is_sandbox_environment()
     AdjustPlugin.initialize(app_token, is_sandbox)
 
 func _on_adjust_init_completed() -> void:
-    print("Adjust SDK Initialized successfully!")
-    
-    # Track a custom event
     AdjustPlugin.track_event("your_event_token")
 
 func _on_adjust_attribution_changed(data: Dictionary) -> void:
-    print("User Attribution Changed: ", data)
+    print("Attribution: ", data)
 ```
