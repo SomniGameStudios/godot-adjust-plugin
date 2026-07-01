@@ -23,12 +23,6 @@
 @tool
 extends EditorPlugin
 
-# v1.1 registered an "Adjust" autoload that pointed at a script removed in v1.2.
-# Projects upgrading from v1.1 keep that stale entry in their project.godot, so
-# clean it up on load to avoid a missing-script error.
-const _STALE_AUTOLOAD := "autoload/Adjust"
-const _STALE_AUTOLOAD_MARKER := "adjust_autoload.gd"
-
 # Project Settings exposed under Project > Project Settings > Adjust.
 const _SETTINGS := {
 	"adjust/config/app_token": {
@@ -56,16 +50,7 @@ var _ios_exporter := preload("res://addons/adjust/internal/exporters/ios/export_
 func _enter_tree() -> void:
 	add_export_plugin(_android_exporter)
 	add_export_plugin(_ios_exporter)
-	_cleanup_stale_autoload()
 	_register_settings()
-
-func _cleanup_stale_autoload() -> void:
-	if not ProjectSettings.has_setting(_STALE_AUTOLOAD):
-		return
-	if not str(ProjectSettings.get_setting(_STALE_AUTOLOAD)).contains(_STALE_AUTOLOAD_MARKER):
-		return
-	remove_autoload_singleton("Adjust")
-	ProjectSettings.save()
 
 func _exit_tree() -> void:
 	remove_export_plugin(_android_exporter)
