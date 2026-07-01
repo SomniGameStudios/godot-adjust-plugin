@@ -126,7 +126,7 @@ static Dictionary adjust_attribution_to_dict(ADJAttribution *attribution) {
         AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
         if (plugin) {
             plugin->last_attribution = data;
-            plugin->emit_signal("attribution_changed", data);
+            plugin->emit_signal("attribution_changed", data.duplicate());
         }
     });
 }
@@ -230,7 +230,7 @@ void AdjustGodotPlugin::request_tracking_authorization() {
 }
 
 Dictionary AdjustGodotPlugin::get_attribution() {
-    return last_attribution;
+    return last_attribution.duplicate();
 }
 
 void AdjustGodotPlugin::track_measurement_consent(bool p_enabled) {
