@@ -32,7 +32,7 @@ const COLOR_WARN := Color(0.84, 0.5, 0.1)
 # demo running in-editor without real tokens.
 var app_token := "your_app_token"
 var event_token := "your_event_token"
-var is_sandbox := OS.is_debug_build()
+var is_sandbox := AdjustPlugin.is_sandbox_environment()
 var fb_app_id := ""
 
 @onready var status_label: Label = %StatusLabel
@@ -72,6 +72,18 @@ func _on_initialize_pressed() -> void:
 	_log("init", "Initializing Adjust (%s)..." % env)
 	_set_status("Initializing...", COLOR_WARN)
 	AdjustPlugin.initialize(app_token, is_sandbox, 30, fb_app_id)
+
+func _on_initialize_from_settings_pressed() -> void:
+	# Push the loaded test credentials into Project Settings in-memory (not saved)
+	# so initialize() resolves them via its adjust/config/* fallback — this
+	# exercises the no-argument, settings-driven path.
+	ProjectSettings.set_setting("adjust/config/app_token", app_token)
+	ProjectSettings.set_setting("adjust/config/fb_app_id", fb_app_id)
+	ProjectSettings.set_setting("adjust/config/environment",
+		AdjustPlugin.EnvironmentMode.SANDBOX if is_sandbox else AdjustPlugin.EnvironmentMode.PRODUCTION)
+	_log("init", "Initializing Adjust from Project Settings (no-arg)...")
+	_set_status("Initializing...", COLOR_WARN)
+	AdjustPlugin.initialize()
 
 func _on_request_att_pressed() -> void:
 	_log("att", "Requesting ATT tracking authorization...")

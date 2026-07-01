@@ -77,6 +77,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Initialize SDK"
 
+[node name="InitializeFromSettings" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Initialize from Project Settings"
+
 [node name="RequestATT" type="Button" parent="SafeArea/Root/Scroll/Actions"]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
@@ -188,6 +194,7 @@ ok_button_text = "Forget Me"
 dialog_text = "Calling GDPR Forget Me permanently opts out this device. This cannot be undone. Are you sure?"
 
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/Initialize" to="." method="_on_initialize_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/InitializeFromSettings" to="." method="_on_initialize_from_settings_pressed"]
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/RequestATT" to="." method="_on_request_att_pressed"]
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/TrackEvent" to="." method="_on_track_event_pressed"]
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/TrackRevenue" to="." method="_on_track_revenue_pressed"]

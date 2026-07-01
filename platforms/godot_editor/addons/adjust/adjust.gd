@@ -42,11 +42,6 @@ const _SETTINGS := {
 		"type": TYPE_INT, "value": 0,
 		"hint": PROPERTY_HINT_ENUM, "hint_string": "Auto (Debug=Sandbox),Sandbox,Production",
 	},
-	"adjust/config/auto_initialize": {
-		"type": TYPE_BOOL, "value": false,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "Auto-initialize the SDK on boot from these settings.",
-	},
 }
 
 var _android_exporter := preload("res://addons/adjust/internal/exporters/android/export_plugin.gd").new()

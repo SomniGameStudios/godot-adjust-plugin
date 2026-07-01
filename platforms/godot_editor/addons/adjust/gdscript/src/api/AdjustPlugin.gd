@@ -27,8 +27,12 @@ const MobileSingletonPlugin := preload("res://addons/adjust/gdscript/src/core/Mo
 
 static var _plugin := MobileSingletonPlugin._get_plugin("AdjustGodotPlugin")
 
+# Assign these before calling initialize(); the native plugin emits
+# initialization_completed synchronously from within initialize().
 static var attribution_changed: Callable
 static var initialization_completed: Callable
+
+static var _connected := false
 
 ## Values for the `adjust/config/environment` Project Setting.
 ## AUTO derives the environment from the build type (debug -> sandbox).
@@ -36,20 +40,32 @@ enum EnvironmentMode { AUTO, SANDBOX, PRODUCTION }
 
 const _PREFIX := "adjust/config/"
 
-static func _static_init() -> void:
-	if _plugin:
-		MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
-		MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
-	if bool(_setting("auto_initialize", false)):
-		_auto_initialize()
-
-static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30, fb_app_id: String = "") -> void:
+## Omitted arguments fall back to the `adjust/config/*` Project Settings, so a
+## project can be configured entirely in the editor and just call initialize().
+static func initialize(app_token := "", is_sandbox := is_sandbox_environment(), att_wait_interval := -1, fb_app_id := "") -> void:
 	if not _plugin:
 		var platform := OS.get_name()
 		if platform == "Android" or platform == "iOS":
 			push_error("AdjustPlugin: native plugin unavailable on %s; Adjust will not track. Check the plugin is enabled in the export." % platform)
 		return
+	if app_token.is_empty():
+		app_token = str(_setting("app_token", ""))
+	if app_token.is_empty():
+		push_error("AdjustPlugin: no app token provided and 'adjust/config/app_token' is unset; SDK not initialized.")
+		return
+	if att_wait_interval < 0:
+		att_wait_interval = int(_setting("att_wait_interval", 30))
+	if fb_app_id.is_empty():
+		fb_app_id = str(_setting("fb_app_id", ""))
+	_connect_signals()
 	_plugin.initialize(app_token, is_sandbox, att_wait_interval, fb_app_id)
+
+static func _connect_signals() -> void:
+	if _connected:
+		return
+	_connected = true
+	MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
+	MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
 
 static func track_event(event_token: String) -> void:
 	if _plugin:
@@ -104,14 +120,6 @@ static func _on_attribution_changed(data: Dictionary) -> void:
 static func _on_initialization_completed() -> void:
 	if initialization_completed.is_valid():
 		initialization_completed.call()
-
-
-static func _auto_initialize() -> void:
-	var app_token := str(_setting("app_token", ""))
-	if app_token.is_empty():
-		push_warning("Adjust: auto_initialize is enabled but 'adjust/config/app_token' is empty; skipping initialization.")
-		return
-	initialize(app_token, is_sandbox_environment(), int(_setting("att_wait_interval", 30)), str(_setting("fb_app_id", "")))
 
 
 ## Resolves whether the SDK should use the sandbox environment, based on the
