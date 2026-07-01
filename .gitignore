@@ -56,6 +56,9 @@ site/
 test_empty_project/
 exports/
 
+# Temporary
+tmp/
+
 # Antigravity CLI
 .antigravitycli/
 
