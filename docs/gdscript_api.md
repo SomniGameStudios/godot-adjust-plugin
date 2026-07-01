@@ -24,6 +24,18 @@ The `data` Dictionary passed to the callback contains:
 * `creative` (String)
 * `click_label` (String)
 
+### Async getter callbacks
+The SDK's device-info and status getters resolve asynchronously. Assign the
+matching callback, then call the `request_*()` method; the callback fires with
+the value.
+```gdscript
+static var adid_received: Callable          # request_adid()
+static var google_ad_id_received: Callable  # request_google_ad_id() — Android only
+static var idfa_received: Callable          # request_idfa() — iOS only
+static var sdk_version_received: Callable    # request_sdk_version()
+static var is_enabled_received: Callable     # request_is_enabled() — passes a bool
+```
+
 ---
 
 ## Methods
@@ -49,16 +61,29 @@ static func is_sandbox_environment() -> bool
 ---
 
 ### `track_event`
-Tracks a custom event by token.
+Tracks a custom event by token, with optional revenue, deduplication, and callback/partner parameters.
 ```gdscript
-static func track_event(event_token: String) -> void
+static func track_event(event_token: String, options := {}) -> void
 ```
 * **`event_token`**: The token identifier for the event defined in the Adjust dashboard.
+* **`options`** *(optional Dictionary)*, any of:
+    * `revenue` (float) + `currency` (String, ISO 4217) — records revenue on the event.
+    * `deduplication_id` (String) — suppresses duplicate event processing (e.g. purchase transaction id).
+    * `callback_id` (String) — custom event identifier surfaced in callbacks/reporting.
+    * `callback_params` (Dictionary) — key/value pairs appended to your raw-data callback URLs.
+    * `partner_params` (Dictionary) — key/value pairs forwarded to integrated ad-network partners.
+
+```gdscript
+AdjustPlugin.track_event("abc123", {
+    "revenue": 0.99, "currency": "USD",
+    "partner_params": {"product_id": "coin_pack_1"},
+})
+```
 
 ---
 
 ### `track_event_with_revenue`
-Tracks a custom event with associated monetary revenue.
+Convenience over `track_event()` for the common revenue case.
 ```gdscript
 static func track_event_with_revenue(event_token: String, amount: float, currency: String) -> void
 ```
@@ -95,8 +120,18 @@ static func track_app_store_subscription(
 
 ---
 
+### `track_third_party_sharing`
+Records the user's third-party data-sharing preference, with optional per-partner granular options (e.g. Google DMA / Meta consent in the EEA).
+```gdscript
+static func track_third_party_sharing(enabled: bool, granular_options := {}) -> void
+```
+* **`enabled`**: `true` to allow third-party sharing, `false` to disable.
+* **`granular_options`** *(optional Dictionary)*: maps a partner name to a Dictionary of key/value options, e.g. `{"google_dma": {"eea": "1", "ad_personalization": "1"}}`.
+
+---
+
 ### `disable_third_party_sharing`
-Disables data sharing with third-party partners (e.g., for privacy compliance).
+Convenience for `track_third_party_sharing(false)`.
 ```gdscript
 static func disable_third_party_sharing() -> void
 ```
@@ -164,4 +199,57 @@ static func track_ad_revenue(source: String, revenue: float, currency: String) -
 * **`source`**: The source of the ad revenue (e.g. `"admob_sdk"`).
 * **`revenue`**: The ad revenue amount.
 * **`currency`**: The ISO 4217 currency code (e.g. `"USD"`).
+
+---
+
+## SDK state
+
+### `set_offline_mode`
+Puts the SDK into offline mode — events are queued locally and sent once back online — or restores online mode.
+```gdscript
+static func set_offline_mode(offline: bool) -> void
+```
+
+### `enable` / `disable`
+Enables or disables the SDK at runtime. While disabled, no events are tracked; `enable()` resumes tracking.
+```gdscript
+static func enable() -> void
+static func disable() -> void
+```
+
+---
+
+## Device info & status (async)
+
+Each method sends a request and resolves through the matching callback (see *Async getter callbacks*). Assign the callback before calling.
+
+### `request_adid`
+Requests Adjust's own device id (`adid`) — the stable, cross-platform key to correlate your analytics/backend with Adjust attribution. Resolves via `adid_received`.
+```gdscript
+static func request_adid() -> void
+```
+
+### `request_google_ad_id` *(Android only)*
+Requests the Google Advertising ID (`gps_adid`). Resolves via `google_ad_id_received`.
+```gdscript
+static func request_google_ad_id() -> void
+```
+
+### `request_idfa` *(iOS only)*
+Requests the iOS IDFA (available only after ATT authorization). Resolves via `idfa_received`.
+```gdscript
+static func request_idfa() -> void
+```
+
+### `request_sdk_version`
+Requests the native Adjust SDK version string. Resolves via `sdk_version_received`.
+```gdscript
+static func request_sdk_version() -> void
+```
+
+### `request_is_enabled`
+Requests whether the SDK is currently enabled. Resolves via `is_enabled_received` with a `bool`.
+```gdscript
+static func request_is_enabled() -> void
+```
 

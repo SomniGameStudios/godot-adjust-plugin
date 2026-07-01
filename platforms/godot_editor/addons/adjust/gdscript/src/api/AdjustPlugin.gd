@@ -32,6 +32,14 @@ static var _plugin := MobileSingletonPlugin._get_plugin("AdjustGodotPlugin")
 static var attribution_changed: Callable
 static var initialization_completed: Callable
 
+# Async getters resolve via these signals: assign the callback, then call the
+# matching request_*() method. The native SDK getters are all callback-based.
+static var adid_received: Callable
+static var google_ad_id_received: Callable
+static var idfa_received: Callable
+static var sdk_version_received: Callable
+static var is_enabled_received: Callable
+
 static var _connected := false
 
 ## Values for the `adjust/config/environment` Project Setting.
@@ -66,6 +74,11 @@ static func _connect_signals() -> void:
 	_connected = true
 	MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
 	MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
+	MobileSingletonPlugin.safe_connect(_plugin, "adid_received", _on_adid_received)
+	MobileSingletonPlugin.safe_connect(_plugin, "google_ad_id_received", _on_google_ad_id_received)
+	MobileSingletonPlugin.safe_connect(_plugin, "idfa_received", _on_idfa_received)
+	MobileSingletonPlugin.safe_connect(_plugin, "sdk_version_received", _on_sdk_version_received)
+	MobileSingletonPlugin.safe_connect(_plugin, "is_enabled_received", _on_is_enabled_received)
 
 ## Capability probe that works on both platforms. On Android the native
 ## singleton is a JNISingleton whose `@UsedByGodot` methods live in a private
@@ -79,13 +92,16 @@ static func _plugin_has(method: String) -> bool:
 		return true
 	return _plugin.has_method("has_java_method") and _plugin.has_java_method(method)
 
-static func track_event(event_token: String) -> void:
+## Tracks a custom event. `options` may carry: `revenue` (float) + `currency`
+## (String), `deduplication_id` (String), `callback_id` (String),
+## `callback_params` (Dictionary), `partner_params` (Dictionary).
+static func track_event(event_token: String, options := {}) -> void:
 	if _plugin:
-		_plugin.track_event(event_token)
+		_plugin.track_event(event_token, options)
 
+## Convenience over track_event() for the common revenue case.
 static func track_event_with_revenue(event_token: String, amount: float, currency: String) -> void:
-	if _plugin:
-		_plugin.track_event_with_revenue(event_token, amount, currency)
+	track_event(event_token, {"revenue": amount, "currency": currency})
 
 static func track_play_store_subscription(price: int, currency: String, sku: String, order_id: String, signature: String, purchase_token: String) -> void:
 	if _plugin_has("track_play_store_subscription"):
@@ -95,9 +111,16 @@ static func track_app_store_subscription(price: String, currency: String, transa
 	if _plugin_has("track_app_store_subscription"):
 		_plugin.track_app_store_subscription(price, currency, transaction_id)
 
+## Records third-party data-sharing preference. `granular_options` maps a
+## partner name to a Dictionary of key/value options, e.g.
+## {"google_dma": {"eea": "1", "ad_personalization": "1"}} for Google DMA / Meta.
+static func track_third_party_sharing(enabled: bool, granular_options := {}) -> void:
+	if _plugin_has("track_third_party_sharing"):
+		_plugin.track_third_party_sharing(enabled, granular_options)
+
+## Convenience: disables third-party sharing with no granular options.
 static func disable_third_party_sharing() -> void:
-	if _plugin:
-		_plugin.disable_third_party_sharing()
+	track_third_party_sharing(false, {})
 
 static func gdpr_forget_me() -> void:
 	if _plugin:
@@ -125,6 +148,46 @@ static func track_ad_revenue(source: String, revenue: float, currency: String) -
 	if _plugin_has("track_ad_revenue"):
 		_plugin.track_ad_revenue(source, revenue, currency)
 
+## Puts the SDK into offline mode (events are queued, not sent) or back online.
+static func set_offline_mode(offline: bool) -> void:
+	if _plugin_has("set_offline_mode"):
+		_plugin.set_offline_mode(offline)
+
+## Re-enables the SDK after disable(). Tracking resumes.
+static func enable() -> void:
+	if _plugin_has("enable_sdk"):
+		_plugin.enable_sdk()
+
+## Disables the SDK. No events track until enable() is called.
+static func disable() -> void:
+	if _plugin_has("disable_sdk"):
+		_plugin.disable_sdk()
+
+## Requests the Adjust device id; resolves via the adid_received callback.
+static func request_adid() -> void:
+	if _plugin_has("request_adid"):
+		_plugin.request_adid()
+
+## (Android only) Requests the Google Advertising ID; resolves via google_ad_id_received.
+static func request_google_ad_id() -> void:
+	if _plugin_has("request_google_ad_id"):
+		_plugin.request_google_ad_id()
+
+## (iOS only) Requests the IDFA; resolves via idfa_received.
+static func request_idfa() -> void:
+	if _plugin_has("request_idfa"):
+		_plugin.request_idfa()
+
+## Requests the native Adjust SDK version; resolves via sdk_version_received.
+static func request_sdk_version() -> void:
+	if _plugin_has("request_sdk_version"):
+		_plugin.request_sdk_version()
+
+## Requests whether the SDK is currently enabled; resolves via is_enabled_received.
+static func request_is_enabled() -> void:
+	if _plugin_has("request_is_enabled"):
+		_plugin.request_is_enabled()
+
 static func _on_attribution_changed(data: Dictionary) -> void:
 	if attribution_changed.is_valid():
 		attribution_changed.call(data)
@@ -132,6 +195,26 @@ static func _on_attribution_changed(data: Dictionary) -> void:
 static func _on_initialization_completed() -> void:
 	if initialization_completed.is_valid():
 		initialization_completed.call()
+
+static func _on_adid_received(adid: String) -> void:
+	if adid_received.is_valid():
+		adid_received.call(adid)
+
+static func _on_google_ad_id_received(google_ad_id: String) -> void:
+	if google_ad_id_received.is_valid():
+		google_ad_id_received.call(google_ad_id)
+
+static func _on_idfa_received(idfa: String) -> void:
+	if idfa_received.is_valid():
+		idfa_received.call(idfa)
+
+static func _on_sdk_version_received(sdk_version: String) -> void:
+	if sdk_version_received.is_valid():
+		sdk_version_received.call(sdk_version)
+
+static func _on_is_enabled_received(enabled: bool) -> void:
+	if is_enabled_received.is_valid():
+		is_enabled_received.call(enabled)
 
 
 ## Resolves whether the SDK should use the sandbox environment, based on the

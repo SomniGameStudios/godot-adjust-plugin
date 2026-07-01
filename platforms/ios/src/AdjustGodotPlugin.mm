@@ -46,35 +46,52 @@ class AdjustGodotPlugin : public Object {
 protected:
     static void _bind_methods() {
         ClassDB::bind_method(D_METHOD("initialize", "app_token", "is_sandbox", "att_wait_interval", "fb_app_id"), &AdjustGodotPlugin::initialize);
-        ClassDB::bind_method(D_METHOD("track_event", "event_token"), &AdjustGodotPlugin::track_event);
-        ClassDB::bind_method(D_METHOD("track_event_with_revenue", "event_token", "amount", "currency"), &AdjustGodotPlugin::track_event_with_revenue);
+        ClassDB::bind_method(D_METHOD("track_event", "event_token", "options"), &AdjustGodotPlugin::track_event);
         ClassDB::bind_method(D_METHOD("track_app_store_subscription", "price", "currency", "transaction_id"), &AdjustGodotPlugin::track_app_store_subscription);
-        ClassDB::bind_method(D_METHOD("disable_third_party_sharing"), &AdjustGodotPlugin::disable_third_party_sharing);
+        ClassDB::bind_method(D_METHOD("track_third_party_sharing", "enabled", "granular_options"), &AdjustGodotPlugin::track_third_party_sharing);
         ClassDB::bind_method(D_METHOD("gdpr_forget_me"), &AdjustGodotPlugin::gdpr_forget_me);
         ClassDB::bind_method(D_METHOD("set_url_strategy", "urls", "use_subdomains", "is_data_residency"), &AdjustGodotPlugin::set_url_strategy);
         ClassDB::bind_method(D_METHOD("request_tracking_authorization"), &AdjustGodotPlugin::request_tracking_authorization);
         ClassDB::bind_method(D_METHOD("get_attribution"), &AdjustGodotPlugin::get_attribution);
         ClassDB::bind_method(D_METHOD("track_measurement_consent", "enabled"), &AdjustGodotPlugin::track_measurement_consent);
         ClassDB::bind_method(D_METHOD("track_ad_revenue", "source", "revenue", "currency"), &AdjustGodotPlugin::track_ad_revenue);
-        
+        ClassDB::bind_method(D_METHOD("set_offline_mode", "offline"), &AdjustGodotPlugin::set_offline_mode);
+        ClassDB::bind_method(D_METHOD("enable_sdk"), &AdjustGodotPlugin::enable_sdk);
+        ClassDB::bind_method(D_METHOD("disable_sdk"), &AdjustGodotPlugin::disable_sdk);
+        ClassDB::bind_method(D_METHOD("request_adid"), &AdjustGodotPlugin::request_adid);
+        ClassDB::bind_method(D_METHOD("request_idfa"), &AdjustGodotPlugin::request_idfa);
+        ClassDB::bind_method(D_METHOD("request_sdk_version"), &AdjustGodotPlugin::request_sdk_version);
+        ClassDB::bind_method(D_METHOD("request_is_enabled"), &AdjustGodotPlugin::request_is_enabled);
+
         ADD_SIGNAL(MethodInfo("attribution_changed", PropertyInfo(Variant::DICTIONARY, "data")));
         ADD_SIGNAL(MethodInfo("initialization_completed"));
+        ADD_SIGNAL(MethodInfo("adid_received", PropertyInfo(Variant::STRING, "adid")));
+        ADD_SIGNAL(MethodInfo("google_ad_id_received", PropertyInfo(Variant::STRING, "google_ad_id")));
+        ADD_SIGNAL(MethodInfo("idfa_received", PropertyInfo(Variant::STRING, "idfa")));
+        ADD_SIGNAL(MethodInfo("sdk_version_received", PropertyInfo(Variant::STRING, "sdk_version")));
+        ADD_SIGNAL(MethodInfo("is_enabled_received", PropertyInfo(Variant::BOOL, "enabled")));
     }
 
 public:
     Dictionary last_attribution;
 
     void initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval, String p_fb_app_id);
-    void track_event(String p_event_token);
-    void track_event_with_revenue(String p_event_token, double p_amount, String p_currency);
+    void track_event(String p_event_token, Dictionary p_options);
     void track_app_store_subscription(String p_price, String p_currency, String p_transaction_id);
-    void disable_third_party_sharing();
+    void track_third_party_sharing(bool p_enabled, Dictionary p_granular_options);
     void gdpr_forget_me();
     void set_url_strategy(PackedStringArray p_urls, bool p_use_subdomains, bool p_is_data_residency);
     void request_tracking_authorization();
     Dictionary get_attribution();
     void track_measurement_consent(bool p_enabled);
     void track_ad_revenue(String p_source, double p_revenue, String p_currency);
+    void set_offline_mode(bool p_offline);
+    void enable_sdk();
+    void disable_sdk();
+    void request_adid();
+    void request_idfa();
+    void request_sdk_version();
+    void request_is_enabled();
 
     static AdjustGodotPlugin *get_singleton() {
         return instance;
@@ -90,6 +107,10 @@ public:
 };
 
 AdjustGodotPlugin *AdjustGodotPlugin::instance = nullptr;
+
+static NSString *to_ns(const String &s) {
+    return [NSString stringWithUTF8String:s.utf8().get_data()];
+}
 
 static Dictionary adjust_attribution_to_dict(ADJAttribution *attribution) {
     Dictionary data;
@@ -178,17 +199,41 @@ void AdjustGodotPlugin::initialize(String p_app_token, bool p_is_sandbox, int p_
     emit_signal("initialization_completed");
 }
 
-void AdjustGodotPlugin::track_event(String p_event_token) {
-    NSString *eventTokenStr = [NSString stringWithUTF8String:p_event_token.utf8().get_data()];
-    ADJEvent *event = [[ADJEvent alloc] initWithEventToken:eventTokenStr];
-    [Adjust trackEvent:event];
-}
+void AdjustGodotPlugin::track_event(String p_event_token, Dictionary p_options) {
+    ADJEvent *event = [[ADJEvent alloc] initWithEventToken:to_ns(p_event_token)];
 
-void AdjustGodotPlugin::track_event_with_revenue(String p_event_token, double p_amount, String p_currency) {
-    NSString *eventTokenStr = [NSString stringWithUTF8String:p_event_token.utf8().get_data()];
-    NSString *currencyStr = [NSString stringWithUTF8String:p_currency.utf8().get_data()];
-    ADJEvent *event = [[ADJEvent alloc] initWithEventToken:eventTokenStr];
-    [event setRevenue:p_amount currency:currencyStr];
+    if (p_options.has("revenue") && p_options.has("currency")) {
+        double revenue = p_options["revenue"];
+        String currency = p_options["currency"];
+        if (!currency.is_empty()) {
+            [event setRevenue:revenue currency:to_ns(currency)];
+        }
+    }
+    if (p_options.has("deduplication_id")) {
+        [event setDeduplicationId:to_ns(String(p_options["deduplication_id"]))];
+    }
+    if (p_options.has("callback_id")) {
+        [event setCallbackId:to_ns(String(p_options["callback_id"]))];
+    }
+    if (p_options.has("callback_params")) {
+        Dictionary params = p_options["callback_params"];
+        Array keys = params.keys();
+        for (int i = 0; i < keys.size(); i++) {
+            String key = keys[i];
+            String value = params[keys[i]];
+            [event addCallbackParameter:to_ns(key) value:to_ns(value)];
+        }
+    }
+    if (p_options.has("partner_params")) {
+        Dictionary params = p_options["partner_params"];
+        Array keys = params.keys();
+        for (int i = 0; i < keys.size(); i++) {
+            String key = keys[i];
+            String value = params[keys[i]];
+            [event addPartnerParameter:to_ns(key) value:to_ns(value)];
+        }
+    }
+
     [Adjust trackEvent:event];
 }
 
@@ -204,8 +249,19 @@ void AdjustGodotPlugin::track_app_store_subscription(String p_price, String p_cu
     [Adjust trackAppStoreSubscription:subscription];
 }
 
-void AdjustGodotPlugin::disable_third_party_sharing() {
-    ADJThirdPartySharing *sharing = [[ADJThirdPartySharing alloc] initWithIsEnabled:@NO];
+void AdjustGodotPlugin::track_third_party_sharing(bool p_enabled, Dictionary p_granular_options) {
+    ADJThirdPartySharing *sharing = [[ADJThirdPartySharing alloc] initWithIsEnabled:@(p_enabled)];
+    Array partners = p_granular_options.keys();
+    for (int i = 0; i < partners.size(); i++) {
+        String partner = partners[i];
+        Dictionary partner_options = p_granular_options[partners[i]];
+        Array keys = partner_options.keys();
+        for (int j = 0; j < keys.size(); j++) {
+            String key = keys[j];
+            String value = partner_options[keys[j]];
+            [sharing addGranularOption:to_ns(partner) key:to_ns(key) value:to_ns(value)];
+        }
+    }
     [Adjust trackThirdPartySharing:sharing];
 }
 
@@ -240,12 +296,68 @@ void AdjustGodotPlugin::track_measurement_consent(bool p_enabled) {
 void AdjustGodotPlugin::track_ad_revenue(String p_source, double p_revenue, String p_currency) {
     NSString *sourceStr = [NSString stringWithUTF8String:p_source.utf8().get_data()];
     NSString *currencyStr = [NSString stringWithUTF8String:p_currency.utf8().get_data()];
-    
+
     ADJAdRevenue *adRevenue = [[ADJAdRevenue alloc] initWithSource:sourceStr];
     if (adRevenue) {
         [adRevenue setRevenue:p_revenue currency:currencyStr];
         [Adjust trackAdRevenue:adRevenue];
     }
+}
+
+void AdjustGodotPlugin::set_offline_mode(bool p_offline) {
+    if (p_offline) {
+        [Adjust switchToOfflineMode];
+    } else {
+        [Adjust switchBackToOnlineMode];
+    }
+}
+
+void AdjustGodotPlugin::enable_sdk() {
+    [Adjust enable];
+}
+
+void AdjustGodotPlugin::disable_sdk() {
+    [Adjust disable];
+}
+
+static void emit_string_signal_on_main(const char *signal_name, NSString *value) {
+    String data = value ? String::utf8([value UTF8String]) : "";
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
+        if (plugin) {
+            plugin->emit_signal(signal_name, data);
+        }
+    });
+}
+
+void AdjustGodotPlugin::request_adid() {
+    [Adjust adidWithCompletionHandler:^(NSString * _Nullable adid) {
+        emit_string_signal_on_main("adid_received", adid);
+    }];
+}
+
+void AdjustGodotPlugin::request_idfa() {
+    [Adjust idfaWithCompletionHandler:^(NSString * _Nullable idfa) {
+        emit_string_signal_on_main("idfa_received", idfa);
+    }];
+}
+
+void AdjustGodotPlugin::request_sdk_version() {
+    [Adjust sdkVersionWithCompletionHandler:^(NSString * _Nullable sdkVersion) {
+        emit_string_signal_on_main("sdk_version_received", sdkVersion);
+    }];
+}
+
+void AdjustGodotPlugin::request_is_enabled() {
+    [Adjust isEnabledWithCompletionHandler:^(BOOL isEnabled) {
+        bool value = isEnabled;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
+            if (plugin) {
+                plugin->emit_signal("is_enabled_received", value);
+            }
+        });
+    }];
 }
 
 // Godot entry points

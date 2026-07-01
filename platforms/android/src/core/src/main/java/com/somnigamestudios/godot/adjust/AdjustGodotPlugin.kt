@@ -51,6 +51,11 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         val signals = mutableSetOf<SignalInfo>()
         signals.add(SignalInfo("attribution_changed", Dictionary::class.java))
         signals.add(SignalInfo("initialization_completed"))
+        signals.add(SignalInfo("adid_received", String::class.java))
+        signals.add(SignalInfo("google_ad_id_received", String::class.java))
+        signals.add(SignalInfo("idfa_received", String::class.java))
+        signals.add(SignalInfo("sdk_version_received", String::class.java))
+        signals.add(SignalInfo("is_enabled_received", Boolean::class.javaObjectType))
         return signals
     }
 
@@ -93,21 +98,37 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun track_event(eventToken: String) {
+    fun track_event(eventToken: String, options: Dictionary) {
         val event = AdjustEvent(eventToken)
+        val revenue = (options["revenue"] as? Number)?.toDouble()
+        val currency = options["currency"] as? String
+        if (revenue != null && !currency.isNullOrEmpty()) {
+            event.setRevenue(revenue, currency)
+        }
+        (options["deduplication_id"] as? String)?.let { event.setDeduplicationId(it) }
+        (options["callback_id"] as? String)?.let { event.setCallbackId(it) }
+        (options["callback_params"] as? Dictionary)?.let { params ->
+            for (key in params.keys) {
+                event.addCallbackParameter(key.toString(), params[key].toString())
+            }
+        }
+        (options["partner_params"] as? Dictionary)?.let { params ->
+            for (key in params.keys) {
+                event.addPartnerParameter(key.toString(), params[key].toString())
+            }
+        }
         Adjust.trackEvent(event)
     }
 
     @UsedByGodot
-    fun track_event_with_revenue(eventToken: String, amount: Double, currency: String) {
-        val event = AdjustEvent(eventToken)
-        event.setRevenue(amount, currency)
-        Adjust.trackEvent(event)
-    }
-
-    @UsedByGodot
-    fun disable_third_party_sharing() {
-        val sharing = AdjustThirdPartySharing(false)
+    fun track_third_party_sharing(enabled: Boolean, granularOptions: Dictionary) {
+        val sharing = AdjustThirdPartySharing(enabled)
+        for (partner in granularOptions.keys) {
+            val partnerOptions = granularOptions[partner] as? Dictionary ?: continue
+            for (key in partnerOptions.keys) {
+                sharing.addGranularOption(partner.toString(), key.toString(), partnerOptions[key].toString())
+            }
+        }
         Adjust.trackThirdPartySharing(sharing)
     }
 
@@ -160,5 +181,42 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         val adRevenue = AdjustAdRevenue(source)
         adRevenue.setRevenue(revenue, currency)
         Adjust.trackAdRevenue(adRevenue)
+    }
+
+    @UsedByGodot
+    fun set_offline_mode(offline: Boolean) {
+        if (offline) Adjust.switchToOfflineMode() else Adjust.switchBackToOnlineMode()
+    }
+
+    @UsedByGodot
+    fun enable_sdk() {
+        Adjust.enable()
+    }
+
+    @UsedByGodot
+    fun disable_sdk() {
+        Adjust.disable()
+    }
+
+    @UsedByGodot
+    fun request_adid() {
+        Adjust.getAdid { adid -> emitSignal("adid_received", adid ?: "") }
+    }
+
+    @UsedByGodot
+    fun request_google_ad_id() {
+        val activity = getActivity() ?: return
+        Adjust.getGoogleAdId(activity) { googleAdId -> emitSignal("google_ad_id_received", googleAdId ?: "") }
+    }
+
+    @UsedByGodot
+    fun request_sdk_version() {
+        Adjust.getSdkVersion { version -> emitSignal("sdk_version_received", version ?: "") }
+    }
+
+    @UsedByGodot
+    fun request_is_enabled() {
+        val activity = getActivity() ?: return
+        Adjust.isEnabled(activity) { enabled -> emitSignal("is_enabled_received", enabled) }
     }
 }
