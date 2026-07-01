@@ -28,21 +28,35 @@ func _get_name() -> String:
 	return "AdjustIOS"
 
 func _supports_platform(platform: EditorExportPlatform) -> bool:
-	return platform.get_os_name() == "iOS"
+	var os_name := platform.get_os_name()
+	print("Adjust iOS: _supports_platform called, os_name='%s'" % os_name)
+	return os_name == "iOS"
 
 func _end_generate_apple_embedded_project(path: String, _will_build_archive: bool) -> void:
-	if not _supports_platform(get_export_platform()):
+	print("Adjust iOS: _end_generate_apple_embedded_project CALLED with path='%s'" % path)
+	var platform := get_export_platform()
+	if platform:
+		print("Adjust iOS: platform os_name='%s'" % platform.get_os_name())
+	else:
+		print("Adjust iOS: platform is null!")
+
+	if not _supports_platform(platform):
+		print("Adjust iOS: platform not supported, returning early.")
 		return
 
 	var export_dir := path.get_base_dir()
 	var project_name := path.get_file().get_basename()
 
-	print("Adjust iOS: Xcode project generated at: %s" % path)
+	print("Adjust iOS: export_dir='%s', project_name='%s'" % [export_dir, project_name])
 
 	_generate_package_swift(export_dir)
+	print("Adjust iOS: Package.swift generated.")
 	_generate_dummy_source(export_dir)
+	print("Adjust iOS: Dummy.swift generated.")
 	_patch_xcodeproj(export_dir, project_name)
+	print("Adjust iOS: pbxproj patched.")
 	_resolve_dependencies(export_dir, project_name)
+	print("Adjust iOS: resolve step complete.")
 
 
 func _patch_xcodeproj(export_dir: String, project_name: String) -> void:
