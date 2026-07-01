@@ -40,7 +40,7 @@ var fb_app_id := ""
 
 func _ready() -> void:
 	_load_credentials()
-	_set_status("Not initialized", COLOR_IDLE)
+	_restore_status()
 
 	var platform := OS.get_name()
 	var found := Engine.has_singleton("AdjustGodotPlugin")
@@ -86,6 +86,9 @@ func _on_initialize_from_settings_pressed() -> void:
 	AdjustPlugin.initialize()
 
 func _on_request_att_pressed() -> void:
+	if OS.get_name() != "iOS":
+		_log("att", "ATT is iOS-only — skipped on %s." % OS.get_name())
+		return
 	_log("att", "Requesting ATT tracking authorization...")
 	AdjustPlugin.request_tracking_authorization()
 
@@ -144,6 +147,8 @@ func _on_forget_me_confirmed() -> void:
 # --- Callbacks ---
 
 func _on_adjust_init_completed() -> void:
+	AdjustDemoState.initialized = true
+	AdjustDemoState.sandbox = is_sandbox
 	_log("init", "Initialization completed.")
 	_set_status("Initialized (%s)" % ("sandbox" if is_sandbox else "production"), COLOR_OK)
 
@@ -157,6 +162,13 @@ func _on_back_pressed() -> void:
 
 func _on_clear_log_pressed() -> void:
 	output.text = ""
+
+func _restore_status() -> void:
+	if AdjustDemoState.initialized:
+		_set_status("Initialized (%s)" % ("sandbox" if AdjustDemoState.sandbox else "production"), COLOR_OK)
+	else:
+		var env := "sandbox" if AdjustPlugin.is_sandbox_environment() else "production"
+		_set_status("Not initialized · %s" % env, COLOR_IDLE)
 
 func _set_status(text: String, color: Color) -> void:
 	status_label.text = "● %s" % text

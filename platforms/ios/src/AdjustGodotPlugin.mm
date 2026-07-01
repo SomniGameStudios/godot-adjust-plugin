@@ -62,7 +62,7 @@ protected:
     }
 
 public:
-    ADJAttribution *last_attribution = nil;
+    Dictionary last_attribution;
 
     void initialize(String p_app_token, bool p_is_sandbox, int p_att_wait_interval, String p_fb_app_id);
     void track_event(String p_event_token);
@@ -91,6 +91,19 @@ public:
 
 AdjustGodotPlugin *AdjustGodotPlugin::instance = nullptr;
 
+static Dictionary adjust_attribution_to_dict(ADJAttribution *attribution) {
+    Dictionary data;
+    if (attribution == nil) return data;
+    data["tracker_token"] = attribution.trackerToken ? String::utf8([attribution.trackerToken UTF8String]) : "";
+    data["tracker_name"] = attribution.trackerName ? String::utf8([attribution.trackerName UTF8String]) : "";
+    data["network"] = attribution.network ? String::utf8([attribution.network UTF8String]) : "";
+    data["campaign"] = attribution.campaign ? String::utf8([attribution.campaign UTF8String]) : "";
+    data["adgroup"] = attribution.adgroup ? String::utf8([attribution.adgroup UTF8String]) : "";
+    data["creative"] = attribution.creative ? String::utf8([attribution.creative UTF8String]) : "";
+    data["click_label"] = attribution.clickLabel ? String::utf8([attribution.clickLabel UTF8String]) : "";
+    return data;
+}
+
 @interface AdjustGodotDelegate : NSObject <AdjustDelegate>
 + (instancetype)sharedInstance;
 @end
@@ -108,19 +121,14 @@ AdjustGodotPlugin *AdjustGodotPlugin::instance = nullptr;
 
 - (void)adjustAttributionChanged:(ADJAttribution *)attribution {
     if (attribution == nil) return;
-    AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
-    if (plugin) {
-        plugin->last_attribution = attribution;
-        Dictionary data;
-        data["tracker_token"] = attribution.trackerToken ? String::utf8([attribution.trackerToken UTF8String]) : "";
-        data["tracker_name"] = attribution.trackerName ? String::utf8([attribution.trackerName UTF8String]) : "";
-        data["network"] = attribution.network ? String::utf8([attribution.network UTF8String]) : "";
-        data["campaign"] = attribution.campaign ? String::utf8([attribution.campaign UTF8String]) : "";
-        data["adgroup"] = attribution.adgroup ? String::utf8([attribution.adgroup UTF8String]) : "";
-        data["creative"] = attribution.creative ? String::utf8([attribution.creative UTF8String]) : "";
-        data["click_label"] = attribution.clickLabel ? String::utf8([attribution.clickLabel UTF8String]) : "";
-        plugin->emit_signal("attribution_changed", data);
-    }
+    Dictionary data = adjust_attribution_to_dict(attribution);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
+        if (plugin) {
+            plugin->last_attribution = data;
+            plugin->emit_signal("attribution_changed", data);
+        }
+    });
 }
 
 @end
@@ -157,10 +165,14 @@ void AdjustGodotPlugin::initialize(String p_app_token, bool p_is_sandbox, int p_
     [Adjust initSdk:config];
     
     [Adjust attributionWithCompletionHandler:^(ADJAttribution * _Nullable attribution) {
-        AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
-        if (plugin && attribution) {
-            plugin->last_attribution = attribution;
-        }
+        if (attribution == nil) return;
+        Dictionary data = adjust_attribution_to_dict(attribution);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
+            if (plugin) {
+                plugin->last_attribution = data;
+            }
+        });
     }];
     
     emit_signal("initialization_completed");
@@ -218,18 +230,7 @@ void AdjustGodotPlugin::request_tracking_authorization() {
 }
 
 Dictionary AdjustGodotPlugin::get_attribution() {
-    Dictionary data;
-    ADJAttribution *attribution = last_attribution;
-    if (attribution != nil) {
-        data["tracker_token"] = attribution.trackerToken ? String::utf8([attribution.trackerToken UTF8String]) : "";
-        data["tracker_name"] = attribution.trackerName ? String::utf8([attribution.trackerName UTF8String]) : "";
-        data["network"] = attribution.network ? String::utf8([attribution.network UTF8String]) : "";
-        data["campaign"] = attribution.campaign ? String::utf8([attribution.campaign UTF8String]) : "";
-        data["adgroup"] = attribution.adgroup ? String::utf8([attribution.adgroup UTF8String]) : "";
-        data["creative"] = attribution.creative ? String::utf8([attribution.creative UTF8String]) : "";
-        data["click_label"] = attribution.clickLabel ? String::utf8([attribution.clickLabel UTF8String]) : "";
-    }
-    return data;
+    return last_attribution;
 }
 
 void AdjustGodotPlugin::track_measurement_consent(bool p_enabled) {

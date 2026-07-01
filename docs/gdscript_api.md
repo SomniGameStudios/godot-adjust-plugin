@@ -136,11 +136,14 @@ static func request_tracking_authorization() -> void
 ---
 
 ### `get_attribution`
-Synchronously retrieves the current user attribution cached by the SDK.
+Returns the most recent attribution the SDK has resolved, as a snapshot. The SDK
+resolves attribution asynchronously, so this may be empty until attribution is
+available (typically shortly after `initialization_completed`); assign
+`attribution_changed` to be notified when it updates.
 ```gdscript
 static func get_attribution() -> Dictionary
 ```
-Returns a Dictionary with keys like `tracker_token`, `tracker_name`, `network`, `campaign`, `adgroup`, `creative`, and `click_label`.
+Returns a Dictionary with keys like `tracker_token`, `tracker_name`, `network`, `campaign`, `adgroup`, `creative`, and `click_label`, or an empty Dictionary if attribution is not yet available.
 
 ---
 

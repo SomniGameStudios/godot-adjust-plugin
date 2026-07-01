@@ -67,6 +67,18 @@ static func _connect_signals() -> void:
 	MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
 	MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
 
+## Capability probe that works on both platforms. On Android the native
+## singleton is a JNISingleton whose `@UsedByGodot` methods live in a private
+## map (not ClassDB), so `Object.has_method()` is always false for them — the
+## engine exposes `has_java_method()` for that case. iOS is a real GDCLASS, so
+## `has_method()` is authoritative there.
+static func _plugin_has(method: String) -> bool:
+	if not _plugin:
+		return false
+	if _plugin.has_method(method):
+		return true
+	return _plugin.has_method("has_java_method") and _plugin.has_java_method(method)
+
 static func track_event(event_token: String) -> void:
 	if _plugin:
 		_plugin.track_event(event_token)
@@ -76,11 +88,11 @@ static func track_event_with_revenue(event_token: String, amount: float, currenc
 		_plugin.track_event_with_revenue(event_token, amount, currency)
 
 static func track_play_store_subscription(price: int, currency: String, sku: String, order_id: String, signature: String, purchase_token: String) -> void:
-	if _plugin and _plugin.has_method("track_play_store_subscription"):
+	if _plugin_has("track_play_store_subscription"):
 		_plugin.track_play_store_subscription(price, currency, sku, order_id, signature, purchase_token)
 
 static func track_app_store_subscription(price: String, currency: String, transaction_id: String) -> void:
-	if _plugin and _plugin.has_method("track_app_store_subscription"):
+	if _plugin_has("track_app_store_subscription"):
 		_plugin.track_app_store_subscription(price, currency, transaction_id)
 
 static func disable_third_party_sharing() -> void:
@@ -96,21 +108,21 @@ static func set_url_strategy(urls: PackedStringArray, use_subdomains: bool, is_d
 		_plugin.set_url_strategy(urls, use_subdomains, is_data_residency)
 
 static func request_tracking_authorization() -> void:
-	if _plugin and _plugin.has_method("request_tracking_authorization"):
+	if _plugin_has("request_tracking_authorization"):
 		_plugin.request_tracking_authorization()
 
 static func get_attribution() -> Dictionary:
-	if _plugin and _plugin.has_method("get_attribution"):
+	if _plugin_has("get_attribution"):
 		var attribution: Dictionary = _plugin.get_attribution()
 		return attribution
 	return {}
 
 static func track_measurement_consent(enabled: bool) -> void:
-	if _plugin and _plugin.has_method("track_measurement_consent"):
+	if _plugin_has("track_measurement_consent"):
 		_plugin.track_measurement_consent(enabled)
 
 static func track_ad_revenue(source: String, revenue: float, currency: String) -> void:
-	if _plugin and _plugin.has_method("track_ad_revenue"):
+	if _plugin_has("track_ad_revenue"):
 		_plugin.track_ad_revenue(source, revenue, currency)
 
 static func _on_attribution_changed(data: Dictionary) -> void:
