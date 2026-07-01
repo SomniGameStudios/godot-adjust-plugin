@@ -118,6 +118,16 @@ func _run_e2e(label: String, init_action: Callable) -> void:
 	await _delay(0.5)
 	AdjustPlugin.track_measurement_consent(true)
 	_log("e2e", "measurement consent: true")
+	await _delay(0.5)
+	AdjustPlugin.track_event(event_token, {
+		"revenue": 1.99, "currency": "USD",
+		"deduplication_id": "e2e_txn_1",
+		"partner_params": {"product_id": "coin_pack_1"},
+	})
+	_log("e2e", "tracked enriched event (revenue + dedup + partner param)")
+	await _delay(0.5)
+	AdjustPlugin.track_third_party_sharing(true, {"google_dma": {"eea": "1", "ad_user_data": "1", "ad_personalization": "1"}})
+	_log("e2e", "third-party sharing: enabled + google_dma granular")
 	await _delay(2.0)
 	_log("e2e", "attribution (after events): %s" % str(AdjustPlugin.get_attribution()))
 	_log("e2e", "===== E2E END (%s): OK =====" % label)

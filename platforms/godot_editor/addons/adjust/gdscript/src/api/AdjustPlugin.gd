@@ -79,13 +79,16 @@ static func _plugin_has(method: String) -> bool:
 		return true
 	return _plugin.has_method("has_java_method") and _plugin.has_java_method(method)
 
-static func track_event(event_token: String) -> void:
+## Tracks a custom event. `options` may carry: `revenue` (float) + `currency`
+## (String), `deduplication_id` (String), `callback_id` (String),
+## `callback_params` (Dictionary), `partner_params` (Dictionary).
+static func track_event(event_token: String, options := {}) -> void:
 	if _plugin:
-		_plugin.track_event(event_token)
+		_plugin.track_event(event_token, options)
 
+## Convenience over track_event() for the common revenue case.
 static func track_event_with_revenue(event_token: String, amount: float, currency: String) -> void:
-	if _plugin:
-		_plugin.track_event_with_revenue(event_token, amount, currency)
+	track_event(event_token, {"revenue": amount, "currency": currency})
 
 static func track_play_store_subscription(price: int, currency: String, sku: String, order_id: String, signature: String, purchase_token: String) -> void:
 	if _plugin_has("track_play_store_subscription"):
@@ -95,9 +98,16 @@ static func track_app_store_subscription(price: String, currency: String, transa
 	if _plugin_has("track_app_store_subscription"):
 		_plugin.track_app_store_subscription(price, currency, transaction_id)
 
+## Records third-party data-sharing preference. `granular_options` maps a
+## partner name to a Dictionary of key/value options, e.g. for Google DMA:
+## {"google_dma": {"eea": "1", "ad_user_data": "1", "ad_personalization": "1"}}.
+static func track_third_party_sharing(enabled: bool, granular_options := {}) -> void:
+	if _plugin_has("track_third_party_sharing"):
+		_plugin.track_third_party_sharing(enabled, granular_options)
+
+## Convenience: disables third-party sharing with no granular options.
 static func disable_third_party_sharing() -> void:
-	if _plugin:
-		_plugin.disable_third_party_sharing()
+	track_third_party_sharing(false, {})
 
 static func gdpr_forget_me() -> void:
 	if _plugin:

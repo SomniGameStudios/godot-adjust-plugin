@@ -49,16 +49,29 @@ static func is_sandbox_environment() -> bool
 ---
 
 ### `track_event`
-Tracks a custom event by token.
+Tracks a custom event by token, with optional revenue, deduplication, and callback/partner parameters.
 ```gdscript
-static func track_event(event_token: String) -> void
+static func track_event(event_token: String, options := {}) -> void
 ```
 * **`event_token`**: The token identifier for the event defined in the Adjust dashboard.
+* **`options`** *(optional Dictionary)*, any of:
+    * `revenue` (float) + `currency` (String, ISO 4217) — records revenue on the event.
+    * `deduplication_id` (String) — suppresses duplicate event processing (e.g. purchase transaction id).
+    * `callback_id` (String) — custom event identifier surfaced in callbacks/reporting.
+    * `callback_params` (Dictionary) — key/value pairs appended to your raw-data callback URLs.
+    * `partner_params` (Dictionary) — key/value pairs forwarded to integrated ad-network partners.
+
+```gdscript
+AdjustPlugin.track_event("abc123", {
+    "revenue": 0.99, "currency": "USD",
+    "partner_params": {"product_id": "coin_pack_1"},
+})
+```
 
 ---
 
 ### `track_event_with_revenue`
-Tracks a custom event with associated monetary revenue.
+Convenience over `track_event()` for the common revenue case.
 ```gdscript
 static func track_event_with_revenue(event_token: String, amount: float, currency: String) -> void
 ```
@@ -95,8 +108,18 @@ static func track_app_store_subscription(
 
 ---
 
+### `track_third_party_sharing`
+Records the user's third-party data-sharing preference, with optional per-partner granular options (e.g. Google DMA / Meta consent in the EEA).
+```gdscript
+static func track_third_party_sharing(enabled: bool, granular_options := {}) -> void
+```
+* **`enabled`**: `true` to allow third-party sharing, `false` to disable.
+* **`granular_options`** *(optional Dictionary)*: maps a partner name to a Dictionary of key/value options. For Google DMA the `google_dma` partner requires `eea` and `ad_user_data` (and optionally `ad_personalization`), e.g. `{"google_dma": {"eea": "1", "ad_user_data": "1", "ad_personalization": "1"}}`.
+
+---
+
 ### `disable_third_party_sharing`
-Disables data sharing with third-party partners (e.g., for privacy compliance).
+Convenience for `track_third_party_sharing(false)`.
 ```gdscript
 static func disable_third_party_sharing() -> void
 ```

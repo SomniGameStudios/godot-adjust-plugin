@@ -93,21 +93,37 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun track_event(eventToken: String) {
+    fun track_event(eventToken: String, options: Dictionary) {
         val event = AdjustEvent(eventToken)
+        val revenue = (options["revenue"] as? Number)?.toDouble()
+        val currency = options["currency"] as? String
+        if (revenue != null && !currency.isNullOrEmpty()) {
+            event.setRevenue(revenue, currency)
+        }
+        (options["deduplication_id"] as? String)?.let { event.setDeduplicationId(it) }
+        (options["callback_id"] as? String)?.let { event.setCallbackId(it) }
+        (options["callback_params"] as? Dictionary)?.let { params ->
+            for (key in params.keys) {
+                event.addCallbackParameter(key.toString(), params[key].toString())
+            }
+        }
+        (options["partner_params"] as? Dictionary)?.let { params ->
+            for (key in params.keys) {
+                event.addPartnerParameter(key.toString(), params[key].toString())
+            }
+        }
         Adjust.trackEvent(event)
     }
 
     @UsedByGodot
-    fun track_event_with_revenue(eventToken: String, amount: Double, currency: String) {
-        val event = AdjustEvent(eventToken)
-        event.setRevenue(amount, currency)
-        Adjust.trackEvent(event)
-    }
-
-    @UsedByGodot
-    fun disable_third_party_sharing() {
-        val sharing = AdjustThirdPartySharing(false)
+    fun track_third_party_sharing(enabled: Boolean, granularOptions: Dictionary) {
+        val sharing = AdjustThirdPartySharing(enabled)
+        for (partner in granularOptions.keys) {
+            val partnerOptions = granularOptions[partner] as? Dictionary ?: continue
+            for (key in partnerOptions.keys) {
+                sharing.addGranularOption(partner.toString(), key.toString(), partnerOptions[key].toString())
+            }
+        }
         Adjust.trackThirdPartySharing(sharing)
     }
 
