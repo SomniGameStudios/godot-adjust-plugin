@@ -41,6 +41,12 @@ script = ExtResource("2_safe")
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="Back" type="Button" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "◄ Back"
+
 [node name="Title" type="Label" parent="SafeArea/Root"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
@@ -193,6 +199,7 @@ size = Vector2i(420, 140)
 ok_button_text = "Forget Me"
 dialog_text = "Calling GDPR Forget Me permanently opts out this device. This cannot be undone. Are you sure?"
 
+[connection signal="pressed" from="SafeArea/Root/Back" to="." method="_on_back_pressed"]
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/Initialize" to="." method="_on_initialize_pressed"]
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/InitializeFromSettings" to="." method="_on_initialize_from_settings_pressed"]
 [connection signal="pressed" from="SafeArea/Root/Scroll/Actions/RequestATT" to="." method="_on_request_att_pressed"]

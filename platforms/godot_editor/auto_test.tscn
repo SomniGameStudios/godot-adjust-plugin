@@ -1,0 +1,119 @@
+[gd_scene load_steps=5 format=3 uid="uid://adjust_auto_scene"]
+
+[ext_resource type="Script" path="res://auto_test.gd" id="1_script"]
+[ext_resource type="Script" path="res://safe_area_container.gd" id="2_safe"]
+[ext_resource type="Theme" path="res://theme.tres" id="3_theme"]
+[ext_resource type="Script" path="res://scroll_container.gd" id="4_scroll"]
+
+[node name="AutoTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.94902, 0.94902, 0.968627, 1)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+script = ExtResource("2_safe")
+
+[node name="Root" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Back" type="Button" parent="SafeArea/Root"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "◄ Back"
+
+[node name="Title" type="Label" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Automatic Test"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="SafeArea/Root"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "● Not initialized"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="SafeArea/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+script = ExtResource("4_scroll")
+
+[node name="Actions" type="VBoxContainer" parent="SafeArea/Root/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="SectionAuto" type="Label" parent="SafeArea/Root/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.4, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "RUN ONE PATH PER LAUNCH"
+
+[node name="RunPathExplicit" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Run E2E — Init SDK (explicit)"
+
+[node name="RunPathSettings" type="Button" parent="SafeArea/Root/Scroll/Actions"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Run E2E — Init from Settings"
+
+[node name="LogHeader" type="HBoxContainer" parent="SafeArea/Root"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LogTitle" type="Label" parent="SafeArea/Root/LogHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Log"
+vertical_alignment = 1
+
+[node name="ClearLog" type="Button" parent="SafeArea/Root/LogHeader"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Clear"
+
+[node name="OutputPanel" type="RichTextLabel" parent="SafeArea/Root"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 18
+scroll_following = true
+
+[connection signal="pressed" from="SafeArea/Root/Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/RunPathExplicit" to="." method="_on_run_path_explicit_pressed"]
+[connection signal="pressed" from="SafeArea/Root/Scroll/Actions/RunPathSettings" to="." method="_on_run_path_settings_pressed"]
+[connection signal="pressed" from="SafeArea/Root/LogHeader/ClearLog" to="." method="_on_clear_log_pressed"]
