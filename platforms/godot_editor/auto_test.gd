@@ -26,10 +26,7 @@ const COLOR_IDLE := Color(0.4, 0.4, 0.44)
 const COLOR_OK := Color(0.18, 0.62, 0.28)
 const COLOR_WARN := Color(0.84, 0.5, 0.1)
 
-# --- CONFIGURATION ---
-# Values are loaded from res://test_credentials.json when present (gitignored);
-# copy test_credentials.json.example to get started. The defaults below keep the
-# demo running in-editor without real tokens.
+# Values are loaded from res://test_credentials.json when present (gitignored).
 var app_token := "your_app_token"
 var event_token := "your_event_token"
 var is_sandbox := AdjustPlugin.is_sandbox_environment()
@@ -37,6 +34,9 @@ var fb_app_id := ""
 
 @onready var status_label: Label = %StatusLabel
 @onready var output: RichTextLabel = %OutputPanel
+
+var _init_completed := false
+var _running := false
 
 func _ready() -> void:
 	_load_credentials()
@@ -65,18 +65,25 @@ func _load_credentials() -> void:
 		is_sandbox = json_data.get("is_sandbox", is_sandbox)
 		fb_app_id = json_data.get("fb_app_id", fb_app_id)
 
-# --- Setup ---
+# --- E2E paths ---
+# Run one path per app launch — Adjust is a singleton, so a second initialize()
+# in the same run is a no-op. ATT (manual system prompt) and GDPR forget-me
+# (irreversible) are intentionally excluded from the automated sequence.
 
-func _on_initialize_pressed() -> void:
-	var env := "sandbox" if is_sandbox else "production"
-	_log("init", "Initializing Adjust (%s)..." % env)
+func _on_run_path_explicit_pressed() -> void:
+	await _run_e2e("explicit args", _init_explicit)
+
+func _on_run_path_settings_pressed() -> void:
+	await _run_e2e("project settings", _init_from_settings)
+
+func _init_explicit() -> void:
+	_log("init", "Initializing Adjust (explicit args)...")
 	_set_status("Initializing...", COLOR_WARN)
 	AdjustPlugin.initialize(app_token, is_sandbox, 30, fb_app_id)
 
-func _on_initialize_from_settings_pressed() -> void:
+func _init_from_settings() -> void:
 	# Push the loaded test credentials into Project Settings in-memory (not saved)
-	# so initialize() resolves them via its adjust/config/* fallback — this
-	# exercises the no-argument, settings-driven path.
+	# so initialize() resolves them via its adjust/config/* fallback.
 	ProjectSettings.set_setting("adjust/config/app_token", app_token)
 	ProjectSettings.set_setting("adjust/config/fb_app_id", fb_app_id)
 	ProjectSettings.set_setting("adjust/config/environment",
@@ -85,68 +92,51 @@ func _on_initialize_from_settings_pressed() -> void:
 	_set_status("Initializing...", COLOR_WARN)
 	AdjustPlugin.initialize()
 
-func _on_request_att_pressed() -> void:
-	if OS.get_name() != "iOS":
-		_log("att", "ATT is iOS-only — skipped on %s." % OS.get_name())
+func _run_e2e(label: String, init_action: Callable) -> void:
+	if _running:
 		return
-	_log("att", "Requesting ATT tracking authorization...")
-	AdjustPlugin.request_tracking_authorization()
-
-# --- Events & Revenue ---
-
-func _on_track_event_pressed() -> void:
-	_log("event", "Tracking event: %s" % event_token)
+	_running = true
+	_log("e2e", "===== E2E START (%s) =====" % label)
+	_init_completed = false
+	init_action.call()
+	if not await _await_init(5.0):
+		_log("e2e", "FAIL: initialization_completed not received within 5s")
+		_log("e2e", "===== E2E END (%s): FAILED =====" % label)
+		_running = false
+		return
+	await _delay(1.0)
+	_log("e2e", "attribution: %s" % str(AdjustPlugin.get_attribution()))
+	await _delay(0.5)
 	AdjustPlugin.track_event(event_token)
-
-func _on_track_revenue_pressed() -> void:
-	_log("revenue", "Tracking revenue: 0.99 USD")
+	_log("e2e", "tracked event: %s" % event_token)
+	await _delay(0.5)
 	AdjustPlugin.track_event_with_revenue(event_token, 0.99, "USD")
-
-func _on_track_ad_revenue_pressed() -> void:
-	_log("ad_revenue", "Tracking ad revenue: 0.45 USD (AppLovin)")
+	_log("e2e", "tracked revenue: 0.99 USD")
+	await _delay(0.5)
 	AdjustPlugin.track_ad_revenue("AppLovin", 0.45, "USD")
-
-# --- Subscription ---
-
-func _on_track_subscription_pressed() -> void:
-	var platform := OS.get_name()
-	if platform == "iOS":
-		_log("subscription", "Tracking App Store subscription: 9.99 USD (test)")
-		AdjustPlugin.track_app_store_subscription("9.99", "USD", "test_transaction_id")
-	elif platform == "Android":
-		_log("subscription", "Tracking Play Store subscription: 9990000 micros (test)")
-		AdjustPlugin.track_play_store_subscription(
-			9990000, "USD", "test_sku", "test_order_id",
-			"test_signature", "test_purchase_token"
-		)
-	else:
-		_log("subscription", "Subscription tracking is only available on mobile platforms.")
-
-# --- Attribution ---
-
-func _on_get_attribution_pressed() -> void:
-	_log("attribution", "Current attribution: %s" % str(AdjustPlugin.get_attribution()))
-
-# --- Privacy & Consent ---
-
-func _on_consent_true_pressed() -> void:
-	_log("consent", "Measurement consent: TRUE")
+	_log("e2e", "tracked ad revenue: 0.45 USD")
+	await _delay(0.5)
 	AdjustPlugin.track_measurement_consent(true)
+	_log("e2e", "measurement consent: true")
+	await _delay(2.0)
+	_log("e2e", "attribution (after events): %s" % str(AdjustPlugin.get_attribution()))
+	_log("e2e", "===== E2E END (%s): OK =====" % label)
+	_running = false
 
-func _on_consent_false_pressed() -> void:
-	_log("consent", "Measurement consent: FALSE")
-	AdjustPlugin.track_measurement_consent(false)
+func _await_init(timeout_seconds: float) -> bool:
+	var elapsed := 0.0
+	while not _init_completed and elapsed < timeout_seconds:
+		await get_tree().create_timer(0.1).timeout
+		elapsed += 0.1
+	return _init_completed
 
-func _on_forget_me_pressed() -> void:
-	$ConfirmationDialog.popup_centered()
-
-func _on_forget_me_confirmed() -> void:
-	_log("gdpr", "Requesting GDPR Forget Me (irreversible)...")
-	AdjustPlugin.gdpr_forget_me()
+func _delay(seconds: float) -> void:
+	await get_tree().create_timer(seconds).timeout
 
 # --- Callbacks ---
 
 func _on_adjust_init_completed() -> void:
+	_init_completed = true
 	AdjustDemoState.initialized = true
 	AdjustDemoState.sandbox = is_sandbox
 	_log("init", "Initialization completed.")

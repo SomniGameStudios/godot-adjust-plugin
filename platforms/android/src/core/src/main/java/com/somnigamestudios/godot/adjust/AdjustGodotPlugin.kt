@@ -36,7 +36,8 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
     private var cachedUrls: Array<String>? = null
     private var cachedUseSubdomains: Boolean = false
     private var cachedIsDataResidency: Boolean = false
-    private var lastAttribution: AdjustAttribution? = null
+    @Volatile
+    private var lastAttribution: Dictionary = Dictionary()
 
     companion object {
         private const val TAG = "AdjustGodotPlugin"
@@ -75,23 +76,17 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
         }
 
         config.setOnAttributionChangedListener { attribution ->
-            lastAttribution = attribution
-            val data = Dictionary()
-            data["tracker_token"] = attribution.trackerToken
-            data["tracker_name"] = attribution.trackerName
-            data["network"] = attribution.network
-            data["campaign"] = attribution.campaign
-            data["adgroup"] = attribution.adgroup
-            data["creative"] = attribution.creative
-            data["click_label"] = attribution.clickLabel
-            
+            val data = toDictionary(attribution)
+            lastAttribution = data
             emitSignal("attribution_changed", data)
         }
 
         Adjust.initSdk(config)
 
         Adjust.getAttribution { attribution ->
-            lastAttribution = attribution
+            if (attribution != null) {
+                lastAttribution = toDictionary(attribution)
+            }
         }
 
         emitSignal("initialization_completed")
@@ -140,17 +135,18 @@ class AdjustGodotPlugin(godot: Godot) : GodotPlugin(godot) {
 
     @UsedByGodot
     fun get_attribution(): Dictionary {
+        return lastAttribution
+    }
+
+    private fun toDictionary(attribution: AdjustAttribution): Dictionary {
         val data = Dictionary()
-        val attribution = lastAttribution
-        if (attribution != null) {
-            data["tracker_token"] = attribution.trackerToken ?: ""
-            data["tracker_name"] = attribution.trackerName ?: ""
-            data["network"] = attribution.network ?: ""
-            data["campaign"] = attribution.campaign ?: ""
-            data["adgroup"] = attribution.adgroup ?: ""
-            data["creative"] = attribution.creative ?: ""
-            data["click_label"] = attribution.clickLabel ?: ""
-        }
+        data["tracker_token"] = attribution.trackerToken ?: ""
+        data["tracker_name"] = attribution.trackerName ?: ""
+        data["network"] = attribution.network ?: ""
+        data["campaign"] = attribution.campaign ?: ""
+        data["adgroup"] = attribution.adgroup ?: ""
+        data["creative"] = attribution.creative ?: ""
+        data["click_label"] = attribution.clickLabel ?: ""
         return data
     }
 

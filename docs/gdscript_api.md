@@ -2,12 +2,6 @@
 
 This page describes the API reference for the `AdjustPlugin` class.
 
-The plugin also registers an **`Adjust`** autoload that mirrors every method
-below as an instance method (e.g. `Adjust.track_event(...)`) and exposes
-`initialization_completed` / `attribution_changed` as **signals**. It can
-auto-initialize from Project Settings — see *Quick Start* on the home page. Use
-the autoload **or** the static `AdjustPlugin` class for callbacks, not both.
-
 ## Callbacks
 
 ### `initialization_completed`
@@ -35,14 +29,22 @@ The `data` Dictionary passed to the callback contains:
 ## Methods
 
 ### `initialize`
-Initializes the Adjust SDK. Call this as early as possible.
+Initializes the Adjust SDK. Call this as early as possible. Any omitted argument falls back to the matching `adjust/config/*` Project Setting, so a project configured in the editor can just call `initialize()` with no arguments. Assign `initialization_completed` / `attribution_changed` **before** calling this.
 ```gdscript
-static func initialize(app_token: String, is_sandbox: bool, att_wait_interval: int = 30, fb_app_id: String = "") -> void
+static func initialize(app_token := "", is_sandbox := is_sandbox_environment(), att_wait_interval := -1, fb_app_id := "") -> void
 ```
-* **`app_token`**: Your Adjust app token from the dashboard.
-* **`is_sandbox`**: Set to `true` for testing/sandbox mode. Set to `false` for production builds.
-* **`att_wait_interval`**: *(iOS only)* The time (in seconds, `0`–`360`) the SDK waits for the user to respond to the App Tracking Transparency (ATT) dialog before sending install data, improving IDFA attribution. Maps to iOS `ADJConfig.attConsentWaitingInterval`. Ignored on Android (no ATT). Default: `30` seconds.
-* **`fb_app_id`**: *(optional)* The Facebook App ID. Provide it to enable the Meta partner integration (Meta Install Referrer on Android). Leave empty to disable. Default: `""`.
+* **`app_token`**: Your Adjust app token from the dashboard. Falls back to `adjust/config/app_token`; if both are empty the SDK is not initialized.
+* **`is_sandbox`**: `true` for testing/sandbox, `false` for production. Defaults to `is_sandbox_environment()` (resolved from `adjust/config/environment`).
+* **`att_wait_interval`**: *(iOS only)* The time (in seconds, `0`–`360`) the SDK waits for the user to respond to the App Tracking Transparency (ATT) dialog before sending install data, improving IDFA attribution. Maps to iOS `ADJConfig.attConsentWaitingInterval`. Ignored on Android (no ATT). A negative value falls back to `adjust/config/att_wait_interval` (default `30`).
+* **`fb_app_id`**: *(optional)* The Facebook App ID. Provide it to enable the Meta partner integration (Meta Install Referrer on Android). Falls back to `adjust/config/fb_app_id`; leave empty to disable.
+
+---
+
+### `is_sandbox_environment`
+Resolves whether the SDK should use the sandbox environment, based on the `adjust/config/environment` Project Setting. `AUTO` uses `OS.is_debug_build()`.
+```gdscript
+static func is_sandbox_environment() -> bool
+```
 
 ---
 
@@ -134,11 +136,14 @@ static func request_tracking_authorization() -> void
 ---
 
 ### `get_attribution`
-Synchronously retrieves the current user attribution cached by the SDK.
+Returns the most recent attribution the SDK has resolved, as a snapshot. The SDK
+resolves attribution asynchronously, so this may be empty until attribution is
+available (typically shortly after `initialization_completed`); assign
+`attribution_changed` to be notified when it updates.
 ```gdscript
 static func get_attribution() -> Dictionary
 ```
-Returns a Dictionary with keys like `tracker_token`, `tracker_name`, `network`, `campaign`, `adgroup`, `creative`, and `click_label`.
+Returns a Dictionary with keys like `tracker_token`, `tracker_name`, `network`, `campaign`, `adgroup`, `creative`, and `click_label`, or an empty Dictionary if attribution is not yet available.
 
 ---
 
