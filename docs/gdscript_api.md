@@ -24,6 +24,20 @@ The `data` Dictionary passed to the callback contains:
 * `creative` (String)
 * `click_label` (String)
 
+### `att_status_received`
+*(iOS Only)* Called after `request_tracking_authorization()` resolves, with the App Tracking Transparency status as an `int`.
+```gdscript
+static var att_status_received: Callable
+```
+The `status` int passed to the callback is one of:
+
+| Value | Meaning |
+|-------|---------|
+| 0 | not determined |
+| 1 | restricted |
+| 2 | denied |
+| 3 | authorized |
+
 ---
 
 ## Methods
@@ -151,7 +165,7 @@ static func set_url_strategy(urls: PackedStringArray, use_subdomains: bool, is_d
 ---
 
 ### `request_tracking_authorization`
-*(iOS Only)* Prompts the user with the App Tracking Transparency (ATT) dialog.
+*(iOS Only)* Prompts the user with the App Tracking Transparency (ATT) dialog; the resulting status arrives via `att_status_received`.
 ```gdscript
 static func request_tracking_authorization() -> void
 ```

@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #import <Foundation/Foundation.h>
-#import <AppTrackingTransparency/ATTrackingManager.h>
 #import <AdjustSdk/Adjust.h>
 #import <AdjustSdk/ADJConfig.h>
 #import <AdjustSdk/ADJEvent.h>
@@ -58,6 +57,7 @@ protected:
 
         ADD_SIGNAL(MethodInfo("attribution_changed", PropertyInfo(Variant::DICTIONARY, "data")));
         ADD_SIGNAL(MethodInfo("initialization_completed"));
+        ADD_SIGNAL(MethodInfo("att_status_received", PropertyInfo(Variant::INT, "status")));
     }
 
 public:
@@ -260,9 +260,17 @@ void AdjustGodotPlugin::set_url_strategy(PackedStringArray p_urls, bool p_use_su
 
 void AdjustGodotPlugin::request_tracking_authorization() {
     if (@available(iOS 14, *)) {
-        [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {
+        [Adjust requestAppTrackingAuthorizationWithCompletionHandler:^(NSUInteger status) {
             NSLog(@"AdjustGodotPlugin: ATT authorization status: %lu", (unsigned long)status);
+            dispatch_async(dispatch_get_main_queue(), ^{
+                AdjustGodotPlugin *plugin = AdjustGodotPlugin::get_singleton();
+                if (plugin) {
+                    plugin->emit_signal("att_status_received", (int)status);
+                }
+            });
         }];
+    } else {
+        emit_signal("att_status_received", 3);
     }
 }
 
