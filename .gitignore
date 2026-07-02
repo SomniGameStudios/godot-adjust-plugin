@@ -54,7 +54,8 @@ site/
 
 # Local Test Projects and Exports
 test_empty_project/
-exports/
+platforms/godot_editor/ios/build/*
+!platforms/godot_editor/ios/build/.gdignore
 
 # Temporary
 tmp/
