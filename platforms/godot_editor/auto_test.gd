@@ -50,6 +50,7 @@ func _ready() -> void:
 
 	AdjustPlugin.initialization_completed = _on_adjust_init_completed
 	AdjustPlugin.attribution_changed = _on_adjust_attribution_changed
+	AdjustPlugin.att_status_received = _on_adjust_att_status_received
 
 func _load_credentials() -> void:
 	var path := "res://test_credentials.json"
@@ -80,6 +81,7 @@ func _init_explicit() -> void:
 	_log("init", "Initializing Adjust (explicit args)...")
 	_set_status("Initializing...", COLOR_WARN)
 	AdjustPlugin.initialize(app_token, is_sandbox, 30, fb_app_id)
+	AdjustPlugin.request_tracking_authorization()
 
 func _init_from_settings() -> void:
 	# Push the loaded test credentials into Project Settings in-memory (not saved)
@@ -91,6 +93,7 @@ func _init_from_settings() -> void:
 	_log("init", "Initializing Adjust from Project Settings (no-arg)...")
 	_set_status("Initializing...", COLOR_WARN)
 	AdjustPlugin.initialize()
+	AdjustPlugin.request_tracking_authorization()
 
 func _run_e2e(label: String, init_action: Callable) -> void:
 	if _running:
@@ -154,6 +157,12 @@ func _on_adjust_init_completed() -> void:
 
 func _on_adjust_attribution_changed(data: Dictionary) -> void:
 	_log("attribution", "Attribution changed: %s" % str(data))
+
+func _on_adjust_att_status_received(status: int) -> void:
+	var names := ["not_determined", "restricted", "denied", "authorized"]
+	var status_name: String = names[status] if status >= 0 and status < names.size() else "unknown"
+	_log("att", "ATT status: %d (%s)" % [status, status_name])
+	_set_status("ATT: %s" % status_name, COLOR_OK if status == 3 else COLOR_WARN)
 
 # --- UI helpers ---
 

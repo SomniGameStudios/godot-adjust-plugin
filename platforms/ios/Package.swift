@@ -26,7 +26,11 @@ let package = Package(
                 .headerSearchPath("../include/godot/platform/ios"),
                 .headerSearchPath("../include/godot/drivers/apple_embedded"),
                 .unsafeFlags(["-std=c++17"]),
-                .define("DEBUG_ENABLED")
+                // Godot's iOS debug template exports the DEBUG_ENABLED ABI
+                // (MethodDefinition bind_methodfi, D_METHODP); the release
+                // template does not. The define must match the build config
+                // or the exported app fails to link.
+                .define("DEBUG_ENABLED", .when(configuration: .debug))
             ]
         )
     ]

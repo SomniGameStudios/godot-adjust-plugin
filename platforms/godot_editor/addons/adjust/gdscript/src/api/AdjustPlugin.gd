@@ -31,6 +31,7 @@ static var _plugin := MobileSingletonPlugin._get_plugin("AdjustGodotPlugin")
 # initialization_completed synchronously from within initialize().
 static var attribution_changed: Callable
 static var initialization_completed: Callable
+static var att_status_received: Callable
 
 static var _connected := false
 
@@ -66,6 +67,8 @@ static func _connect_signals() -> void:
 	_connected = true
 	MobileSingletonPlugin.safe_connect(_plugin, "attribution_changed", _on_attribution_changed)
 	MobileSingletonPlugin.safe_connect(_plugin, "initialization_completed", _on_initialization_completed)
+	if _plugin.has_signal("att_status_received"):
+		MobileSingletonPlugin.safe_connect(_plugin, "att_status_received", _on_att_status_received)
 
 ## Capability probe that works on both platforms. On Android the native
 ## singleton is a JNISingleton whose `@UsedByGodot` methods live in a private
@@ -117,6 +120,7 @@ static func set_url_strategy(urls: PackedStringArray, use_subdomains: bool, is_d
 	if _plugin:
 		_plugin.set_url_strategy(urls, use_subdomains, is_data_residency)
 
+## iOS-only: shows the ATT dialog; the resulting status arrives via att_status_received.
 static func request_tracking_authorization() -> void:
 	if _plugin_has("request_tracking_authorization"):
 		_plugin.request_tracking_authorization()
@@ -142,6 +146,10 @@ static func _on_attribution_changed(data: Dictionary) -> void:
 static func _on_initialization_completed() -> void:
 	if initialization_completed.is_valid():
 		initialization_completed.call()
+
+static func _on_att_status_received(status: int) -> void:
+	if att_status_received.is_valid():
+		att_status_received.call(status)
 
 
 ## Resolves whether the SDK should use the sandbox environment, based on the

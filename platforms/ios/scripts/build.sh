@@ -42,10 +42,9 @@ for CONFIG in Release Debug; do
 
     cd "$IOS_DIR"
 
-    # DEBUG_ENABLED must always be defined because Godot export templates
-    # (both debug and release) are compiled with it. This controls which
-    # ClassDB::bind_methodfi overload is used (MethodDefinition vs char*).
-    XCODE_FLAGS=(GCC_PREPROCESSOR_DEFINITIONS='$(inherited) DEBUG_ENABLED=1')
+    # DEBUG_ENABLED is defined per-configuration in Package.swift
+    # (SPM targets ignore command-line GCC_PREPROCESSOR_DEFINITIONS).
+    XCODE_FLAGS=()
 
     # --- Build for Device (arm64) ---
     echo ">>> Building for iOS Device (arm64) [$CONFIG]..."

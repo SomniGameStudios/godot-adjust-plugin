@@ -24,43 +24,71 @@ extends EditorExportPlugin
 
 const PbxprojService := preload("res://addons/adjust/internal/services/pbxproj_service.gd")
 
-var _export_path := ""
-var _is_ios := false
+var _pending_export_path := ""
+var _spm_applied := false
 
 func _get_name() -> String:
 	return "AdjustIOS"
 
 func _supports_platform(platform: EditorExportPlatform) -> bool:
-	return platform.get_os_name() == "iOS"
+	var os_name := platform.get_os_name()
+	print("Adjust iOS: _supports_platform called, os_name='%s'" % os_name)
+	return os_name == "iOS"
 
-func _export_begin(features: PackedStringArray, is_debug: bool, path: String, flags: int) -> void:
-	_export_path = path
-	_is_ios = features.has("ios")
+func _export_begin(features: PackedStringArray, _is_debug: bool, path: String, _flags: int) -> void:
+	_spm_applied = false
+	_pending_export_path = path if ("ios" in features or "iOS" in features) else ""
 
+# Godot < 4.7 has no _end_generate_apple_embedded_project virtual; fall back to
+# _export_end, which fires after the Xcode project is written to the export path.
 func _export_end() -> void:
-	if not _is_ios or _export_path.is_empty():
+	if _spm_applied or _pending_export_path.is_empty():
 		return
-		
-	var export_dir := _export_path.get_base_dir()
+	print("Adjust iOS: _export_end fallback (pre-4.7 engine) with path='%s'" % _pending_export_path)
+	_apply_spm(_pending_export_path)
+
+func _end_generate_apple_embedded_project(path: String, _will_build_archive: bool) -> void:
+	print("Adjust iOS: _end_generate_apple_embedded_project CALLED with path='%s'" % path)
+	var platform := get_export_platform()
+	if platform:
+		print("Adjust iOS: platform os_name='%s'" % platform.get_os_name())
+	else:
+		print("Adjust iOS: platform is null!")
+
+	if not _supports_platform(platform):
+		print("Adjust iOS: platform not supported, returning early.")
+		return
+
+	_apply_spm(path)
+
+func _apply_spm(path: String) -> void:
+	_spm_applied = true
+	var export_dir := path.get_base_dir()
+	var project_name := path.get_file().get_basename()
+
+	print("Adjust iOS: export_dir='%s', project_name='%s'" % [export_dir, project_name])
+
 	_generate_package_swift(export_dir)
+	print("Adjust iOS: Package.swift generated.")
 	_generate_dummy_source(export_dir)
-	_defer_pbxproj_patch.call_deferred(export_dir)
+	print("Adjust iOS: Dummy.swift generated.")
+	_patch_xcodeproj(export_dir, project_name)
+	print("Adjust iOS: pbxproj patched.")
+	_resolve_dependencies(export_dir, project_name)
+	print("Adjust iOS: resolve step complete.")
 
-func _defer_pbxproj_patch(export_dir: String) -> void:
-	_patch_xcodeproj(export_dir)
 
-func _patch_xcodeproj(export_dir: String) -> void:
-	var project_name := _export_path.get_file().get_basename()
+func _patch_xcodeproj(export_dir: String, project_name: String) -> void:
 	var pbxproj_path := export_dir.path_join(project_name + ".xcodeproj/project.pbxproj")
-	
+
 	if FileAccess.file_exists(pbxproj_path):
 		PbxprojService.patch(pbxproj_path)
 		return
-	
+
 	var dir := DirAccess.open(export_dir)
 	if not dir:
 		return
-	
+
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
 	while file_name != "":
@@ -71,28 +99,67 @@ func _patch_xcodeproj(export_dir: String) -> void:
 			break
 		file_name = dir.get_next()
 
+
+func _resolve_dependencies(export_dir: String, project_name: String) -> void:
+	var globalized_project := ProjectSettings.globalize_path(
+		export_dir.path_join(project_name)
+	)
+	var script_content := """#!/bin/bash
+set -e
+xcodebuild -resolvePackageDependencies \\
+	-project "%s.xcodeproj" \\
+	-scheme "%s"
+""" % [globalized_project, project_name]
+
+	var script_path := export_dir.path_join("resolve_spm.sh")
+	var file := FileAccess.open(script_path, FileAccess.WRITE)
+	if not file:
+		push_error("Adjust iOS: Failed to write resolve script.")
+		return
+
+	file.store_string(script_content)
+	file.close()
+
+	var chmod_output: Array = []
+	OS.execute("chmod", ["+x", script_path], chmod_output, true, false)
+
+	print("Adjust iOS: Resolving SPM dependencies...")
+
+	var output: Array = []
+	var exit_code := OS.execute(script_path, [], output, true, false)
+
+	if exit_code == 0:
+		for line in output:
+			print("Adjust iOS SPM: %s" % line)
+		print("Adjust iOS: SPM dependencies resolved successfully.")
+	else:
+		for line in output:
+			push_error("Adjust iOS SPM: %s" % line)
+		push_error("Adjust iOS: Failed to resolve SPM dependencies. Try manually in Xcode.")
+
+
 func _generate_package_swift(export_dir: String) -> void:
-	var source_dir := export_dir.path_join("SomniAdjustDeps")
+	var source_dir := export_dir.path_join("AdjustDeps")
 	if not DirAccess.dir_exists_absolute(source_dir):
 		DirAccess.make_dir_recursive_absolute(source_dir)
-			
+
 	var content := """// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
-    name: "SomniAdjustDeps",
+    name: "AdjustDeps",
     platforms: [.iOS(.v13)],
     products: [
         .library(
-            name: "SomniAdjustDeps",
-            targets: ["SomniAdjustDeps"]),
+            name: "AdjustDeps",
+            targets: ["AdjustDeps"]),
     ],
     dependencies: [
         .package(url: "https://github.com/adjust/ios_sdk", exact: "5.7.0"),
     ],
     targets: [
         .target(
-            name: "SomniAdjustDeps",
+            name: "AdjustDeps",
             dependencies: [
                 .product(name: "AdjustSdk", package: "ios_sdk"),
             ],
@@ -106,12 +173,19 @@ let package = Package(
 		file.store_string(content)
 		file.close()
 
+
 func _generate_dummy_source(export_dir: String) -> void:
-	var source_dir := export_dir.path_join("SomniAdjustDeps")
+	var source_dir := export_dir.path_join("AdjustDeps")
 	if not DirAccess.dir_exists_absolute(source_dir):
 		DirAccess.make_dir_recursive_absolute(source_dir)
-			
-	var content := "// Dummy\nimport Foundation\n\npublic struct SomniAdjustDeps {\n    public init() {}\n}\n"
+
+	var content := (
+		"// Dummy\n"
+		+ "import Foundation\n\n"
+		+ "public struct AdjustDeps {\n"
+		+ "    public init() {}\n"
+		+ "}\n"
+	)
 	var file := FileAccess.open(source_dir.path_join("Dummy.swift"), FileAccess.WRITE)
 	if file:
 		file.store_string(content)
