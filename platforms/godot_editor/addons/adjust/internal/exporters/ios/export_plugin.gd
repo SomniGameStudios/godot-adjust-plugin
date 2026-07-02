@@ -24,6 +24,9 @@ extends EditorExportPlugin
 
 const PbxprojService := preload("res://addons/adjust/internal/services/pbxproj_service.gd")
 
+var _pending_export_path := ""
+var _spm_applied := false
+
 func _get_name() -> String:
 	return "AdjustIOS"
 
@@ -31,6 +34,18 @@ func _supports_platform(platform: EditorExportPlatform) -> bool:
 	var os_name := platform.get_os_name()
 	print("Adjust iOS: _supports_platform called, os_name='%s'" % os_name)
 	return os_name == "iOS"
+
+func _export_begin(features: PackedStringArray, _is_debug: bool, path: String, _flags: int) -> void:
+	_spm_applied = false
+	_pending_export_path = path if ("ios" in features or "iOS" in features) else ""
+
+# Godot < 4.7 has no _end_generate_apple_embedded_project virtual; fall back to
+# _export_end, which fires after the Xcode project is written to the export path.
+func _export_end() -> void:
+	if _spm_applied or _pending_export_path.is_empty():
+		return
+	print("Adjust iOS: _export_end fallback (pre-4.7 engine) with path='%s'" % _pending_export_path)
+	_apply_spm(_pending_export_path)
 
 func _end_generate_apple_embedded_project(path: String, _will_build_archive: bool) -> void:
 	print("Adjust iOS: _end_generate_apple_embedded_project CALLED with path='%s'" % path)
@@ -44,6 +59,10 @@ func _end_generate_apple_embedded_project(path: String, _will_build_archive: boo
 		print("Adjust iOS: platform not supported, returning early.")
 		return
 
+	_apply_spm(path)
+
+func _apply_spm(path: String) -> void:
+	_spm_applied = true
 	var export_dir := path.get_base_dir()
 	var project_name := path.get_file().get_basename()
 
