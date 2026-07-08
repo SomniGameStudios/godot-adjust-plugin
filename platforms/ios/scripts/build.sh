@@ -116,12 +116,10 @@ for CONFIG in Release Debug; do
     cp -R "$XCFW_PATH" "$DEST_PLUGINS/"
     cp "$IOS_DIR/AdjustGodotPlugin.gdip" "$DEST_PLUGINS/"
 
-    # Also copy the release framework as the default/non-suffix name
-    if [ "$CONFIG" = "Release" ]; then
-        echo ">>> Copying default ${PRODUCT_NAME}.xcframework..."
-        rm -rf "$DEST_PLUGINS/${PRODUCT_NAME}.xcframework"
-        cp -R "$XCFW_PATH" "$DEST_PLUGINS/${PRODUCT_NAME}.xcframework"
-    fi
+    # Godot only resolves the .debug/.release xcframeworks per export target
+    # when no unsuffixed xcframework exists at the .gdip binary path, so make
+    # sure a stale default copy never lingers.
+    rm -rf "$DEST_PLUGINS/${PRODUCT_NAME}.xcframework"
 done
 
 echo ">>> iOS Build Complete"
