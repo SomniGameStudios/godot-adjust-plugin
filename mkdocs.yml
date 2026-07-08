@@ -50,6 +50,7 @@ plugins:
 nav:
   - Introduction: index.md
   - API Reference: gdscript_api.md
+  - iOS ATT: ios_att.md
   - Testing Guide: testing.md
   - Android: android.md
 
