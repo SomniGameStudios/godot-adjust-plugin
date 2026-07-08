@@ -172,6 +172,14 @@ static func request_tracking_authorization() -> void
 
 ---
 
+### `get_att_status`
+*(iOS Only)* Returns the current ATT authorization status **without ever showing the dialog**: `0` not determined, `1` restricted, `2` denied, `3` authorized. Use this to read a decision that was made elsewhere, for example by a consent SDK (such as Google's UMP) that presents the ATT prompt for you, so you can log the outcome without re-prompting the user. Reading the status never triggers the dialog, so it is safe to call even when the user has not yet been asked (e.g. a region where a consent flow chose not to show ATT). Returns `-1` where the status is unavailable: on Android, or on a native build that predates this method.
+```gdscript
+static func get_att_status() -> int
+```
+
+---
+
 ### `get_attribution`
 Returns the most recent attribution the SDK has resolved, as a snapshot. The SDK
 resolves attribution asynchronously, so this may be empty until attribution is

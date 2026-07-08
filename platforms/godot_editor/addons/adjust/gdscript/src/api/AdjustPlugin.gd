@@ -125,6 +125,16 @@ static func request_tracking_authorization() -> void:
 	if _plugin_has("request_tracking_authorization"):
 		_plugin.request_tracking_authorization()
 
+## iOS-only: the current ATT authorization status WITHOUT ever showing the dialog:
+## 0 not determined, 1 restricted, 2 denied, 3 authorized. Use this to read a
+## decision made elsewhere (e.g. a consent SDK that presents ATT) without
+## re-prompting. Returns -1 where the status is unavailable: Android, or a native
+## build that predates this method.
+static func get_att_status() -> int:
+	if _plugin_has("get_att_status"):
+		return int(_plugin.get_att_status())
+	return -1
+
 static func get_attribution() -> Dictionary:
 	if _plugin_has("get_attribution"):
 		var attribution: Dictionary = _plugin.get_attribution()

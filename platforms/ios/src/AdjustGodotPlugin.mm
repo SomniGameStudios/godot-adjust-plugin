@@ -29,6 +29,7 @@
 #import <AdjustSdk/ADJAppStoreSubscription.h>
 #import <AdjustSdk/ADJLogger.h>
 #import <AdjustSdk/ADJAdRevenue.h>
+#import <AppTrackingTransparency/AppTrackingTransparency.h>
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
 
@@ -51,6 +52,7 @@ protected:
         ClassDB::bind_method(D_METHOD("gdpr_forget_me"), &AdjustGodotPlugin::gdpr_forget_me);
         ClassDB::bind_method(D_METHOD("set_url_strategy", "urls", "use_subdomains", "is_data_residency"), &AdjustGodotPlugin::set_url_strategy);
         ClassDB::bind_method(D_METHOD("request_tracking_authorization"), &AdjustGodotPlugin::request_tracking_authorization);
+        ClassDB::bind_method(D_METHOD("get_att_status"), &AdjustGodotPlugin::get_att_status);
         ClassDB::bind_method(D_METHOD("get_attribution"), &AdjustGodotPlugin::get_attribution);
         ClassDB::bind_method(D_METHOD("track_measurement_consent", "enabled"), &AdjustGodotPlugin::track_measurement_consent);
         ClassDB::bind_method(D_METHOD("track_ad_revenue", "source", "revenue", "currency"), &AdjustGodotPlugin::track_ad_revenue);
@@ -70,6 +72,7 @@ public:
     void gdpr_forget_me();
     void set_url_strategy(PackedStringArray p_urls, bool p_use_subdomains, bool p_is_data_residency);
     void request_tracking_authorization();
+    int get_att_status();
     Dictionary get_attribution();
     void track_measurement_consent(bool p_enabled);
     void track_ad_revenue(String p_source, double p_revenue, String p_currency);
@@ -272,6 +275,16 @@ void AdjustGodotPlugin::request_tracking_authorization() {
     } else {
         emit_signal("att_status_received", 3);
     }
+}
+
+// Returns the current ATT authorization status WITHOUT showing the dialog:
+// 0 notDetermined, 1 restricted, 2 denied, 3 authorized. Pre-iOS 14 has no ATT,
+// so IDFA access is governed by LAT only; reported as authorized (3).
+int AdjustGodotPlugin::get_att_status() {
+    if (@available(iOS 14, *)) {
+        return (int)ATTrackingManager.trackingAuthorizationStatus;
+    }
+    return 3;
 }
 
 Dictionary AdjustGodotPlugin::get_attribution() {
